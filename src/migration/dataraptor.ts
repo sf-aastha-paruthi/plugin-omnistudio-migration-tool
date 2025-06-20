@@ -206,7 +206,8 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
   public async assess(): Promise<DataRaptorAssessmentInfo[]> {
     try {
       DebugTimer.getInstance().lap('Query data raptors');
-      const dataRaptors = await this.getAllDataRaptors();
+      let dataRaptors = await this.getAllDataRaptors();
+      dataRaptors = [];
 
       const dataRaptorAssessmentInfos = this.processDRComponents(dataRaptors);
       /* this.ux.log('dataRaptorAssessmentInfos');

@@ -42,14 +42,14 @@ export class AssessmentReporter {
         this.generateCardAssesment(result.flexCardAssessmentInfos, instanceUrl)
       );
       this.createDocument(
-       apexAssessmentFilePath,
+        apexAssessmentFilePath,
         ApexAssessmentReporter.generateApexAssesment(result.apexAssessmentInfos, instanceUrl, orgDetails)
       );
-      
-    // this.createDocument(
-    //   lwcAssessmentFilePath,
-    //   LWCAssessmentReporter.generateLwcAssesment(result.lwcAssessmentInfos, instanceUrl, orgDetails)
-    // );
+
+      // this.createDocument(
+      //   lwcAssessmentFilePath,
+      //   LWCAssessmentReporter.generateLwcAssesment(result.lwcAssessmentInfos, instanceUrl, orgDetails)
+      // );
 
       this.createDocument(
         integrationProcedureAssessmentFilePath,
@@ -231,6 +231,9 @@ export class AssessmentReporter {
                   <td style="word-wrap: break-word; white-space: normal; max-width: 60%; overflow: hidden;">
                       <div title="${card.dependenciesDR}">${card.dependenciesDR}</div>
                   </td>
+                  <td style="word-wrap: break-word; white-space: normal; max-width: 60%; overflow: hidden;">
+                      <div title="${card.dependenciesFC}">${card.dependenciesFC}</div>
+                  </td>
               </tr>`;
       tableBody += row;
     }
@@ -277,7 +280,10 @@ export class AssessmentReporter {
                     <th class="" scope="col" style="width: 20%; word-wrap: break-word; white-space: normal; text-align: left;">
                         <div title="Dependencies">Data Mapper Dependencies</div>
                     </th>
-                </tr>
+                    <th class="" scope="col" style="width: 20%; word-wrap: break-word; white-space: normal; text-align: left;">
+                        <div title="Dependencies">Flexcard Dependencies</div>
+                    </th>
+            </tr>
             </thead>
             <tbody>
             ${tableContent}
