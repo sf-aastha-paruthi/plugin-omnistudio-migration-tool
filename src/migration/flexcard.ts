@@ -92,7 +92,16 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   public async assess(): Promise<FlexCardAssessmentInfo[]> {
     try {
-      const flexCards = await this.getAllActiveCards();
+      let flexCards = await this.getAllActiveCards();
+      // Here only get the required cards
+      /*
+      const filteredCards = flexCards.filter(
+        (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('ABC')
+      );
+
+      flexCards = filteredCards;
+      */
+
       const flexCardsAssessmentInfos = this.processCardComponents(flexCards);
       this.ux.log('flexCardsAssessmentInfos');
       // this.ux.log(flexCardsAssessmentInfos.toString());
@@ -118,6 +127,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         dependenciesIP: [],
         dependenciesDR: [],
         dependenciesOS: [],
+        dependenciesFC: [],
         infos: [],
         warnings: [],
       };
@@ -137,6 +147,12 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     } else if (dataSource.type === 'IntegrationProcedures') {
       flexCardAssessmentInfo.dependenciesIP.push(dataSource['value']['ipMethod']);
     }
+
+    let cardDefinition = JSON.parse(flexCard[this.namespacePrefix + 'Definition__c']);
+    this.ux.log('My custom message');
+    const childCards = cardDefinition.states[0].childCards;
+    this.ux.log(childCards);
+    flexCardAssessmentInfo.dependenciesFC.push(childCards);
   }
   // Query all cards that are active
   private async getAllActiveCards(): Promise<AnyJson[]> {

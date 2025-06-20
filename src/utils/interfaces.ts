@@ -96,6 +96,7 @@ export interface FlexCardAssessmentInfo {
   dependenciesIP: string[];
   dependenciesDR: string[];
   dependenciesOS: string[];
+  dependenciesFC: string[];
   infos: string[];
   warnings: string[];
 }
