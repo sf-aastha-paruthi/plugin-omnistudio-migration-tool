@@ -92,7 +92,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   public async assess(): Promise<FlexCardAssessmentInfo[]> {
     try {
-      let flexCards = await this.getAllActiveCards();
+      const flexCards = await this.getAllActiveCards();
       const flexCardsAssessmentInfos = this.processCardComponents(flexCards);
       this.ux.log('flexCardsAssessmentInfos');
       // this.ux.log(flexCardsAssessmentInfos.toString());
