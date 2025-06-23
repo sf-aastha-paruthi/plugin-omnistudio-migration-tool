@@ -181,7 +181,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     flexCardAssessmentInfos: FlexCardAssessmentInfo[]
   ): Promise<OmniAssessmentInfo> {
     try {
-      let omniscripts = await this.getAllOmniScripts();
+      const omniscripts = await this.getAllOmniScripts();
       const omniAssessmentInfos = await this.processOmniComponents(
         omniscripts,
         dataRaptorAssessmentInfos,
