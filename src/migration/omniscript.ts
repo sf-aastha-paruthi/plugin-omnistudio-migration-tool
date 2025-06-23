@@ -182,7 +182,6 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
   ): Promise<OmniAssessmentInfo> {
     try {
       let omniscripts = await this.getAllOmniScripts();
-      omniscripts = [];
       const omniAssessmentInfos = await this.processOmniComponents(
         omniscripts,
         dataRaptorAssessmentInfos,

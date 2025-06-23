@@ -93,15 +93,6 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   public async assess(): Promise<FlexCardAssessmentInfo[]> {
     try {
       let flexCards = await this.getAllActiveCards();
-      // Here only get the required cards
-      /*
-      const filteredCards = flexCards.filter(
-        (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('ABC')
-      );
-
-      flexCards = filteredCards;
-      */
-
       const flexCardsAssessmentInfos = this.processCardComponents(flexCards);
       this.ux.log('flexCardsAssessmentInfos');
       // this.ux.log(flexCardsAssessmentInfos.toString());
@@ -148,10 +139,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       flexCardAssessmentInfo.dependenciesIP.push(dataSource['value']['ipMethod']);
     }
 
-    let cardDefinition = JSON.parse(flexCard[this.namespacePrefix + 'Definition__c']);
-    this.ux.log('My custom message');
-    const childCards = cardDefinition.states[0].childCards;
-    this.ux.log(childCards);
+    let childCards = this.readChildCardsFromDefinition(flexCard);
     flexCardAssessmentInfo.dependenciesFC.push(childCards);
   }
   // Query all cards that are active
@@ -321,6 +309,20 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         warnings: [],
       });
     }
+  }
+
+  private readChildCardsFromDefinition(card: AnyJson): string[] {
+    let childs = [];
+
+    const definition = JSON.parse(card[this.namespacePrefix + 'Definition__c']);
+    if (!definition) return childs;
+
+    for (let state of definition.states || []) {
+      if (state.childCards && Array.isArray(state.childCards)) {
+        childs = childs.concat(state.childCards);
+      }
+    }
+    return childs;
   }
 
   private getChildCards(card: AnyJson): string[] {

@@ -232,8 +232,8 @@ export class AssessmentReporter {
                   <td style="word-wrap: break-word; white-space: normal; max-width: 60%; overflow: hidden;">
                       <div title="${card.dependenciesDR}">${card.dependenciesDR}</div>
                   </td>
-                  <td style="word-wrap: break-word; white-space: normal; max-width: 60%; overflow: hidden;">
-                      <div title="${card.dependenciesFC}">${card.dependenciesFC}</div>
+                  <td style="word-wrap: break-word; white-space: normal; max-width: 250px; overflow: hidden;">
+                      <div class="slds-truncate" title="${card.dependenciesFC}">${card.dependenciesFC}</div>
                   </td>
               </tr>`;
       tableBody += row;

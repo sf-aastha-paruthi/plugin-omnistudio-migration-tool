@@ -207,7 +207,6 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     try {
       DebugTimer.getInstance().lap('Query data raptors');
       let dataRaptors = await this.getAllDataRaptors();
-      dataRaptors = [];
 
       const dataRaptorAssessmentInfos = this.processDRComponents(dataRaptors);
       /* this.ux.log('dataRaptorAssessmentInfos');
