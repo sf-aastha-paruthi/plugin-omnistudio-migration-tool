@@ -54,6 +54,11 @@ export class FlexcardAssessmentReporter {
         rowspan: 2,
         subColumn: [],
       },
+      {
+        label: 'Flexcard dependencies',
+        rowspan: 2,
+        subColumn: [],
+      },
     ];
 
     // Define columns
@@ -91,6 +96,11 @@ export class FlexcardAssessmentReporter {
         key: 'dependenciesDR',
         cell: (row: FlexCardAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
         filterValue: (row: FlexCardAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
+      },
+      {
+        key: 'dependenciesFC',
+        cell: (row: FlexCardAssessmentInfo): string => (row.dependenciesFC ? row.dependenciesFC.join(', ') : ''),
+        filterValue: (row: FlexCardAssessmentInfo): string => (row.dependenciesFC ? row.dependenciesFC.join(', ') : ''),
       },
     ];
 
