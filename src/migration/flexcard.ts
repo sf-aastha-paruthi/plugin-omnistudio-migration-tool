@@ -114,7 +114,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     const flexCardAssessmentInfos: FlexCardAssessmentInfo[] = [];
     let progressCounter = 0;
     const progressBar = createProgressBar('Assessing', 'Flexcard');
-    progressBar.start(flexCards.length, progressCounter);    const uniqueNames = new Set<string>();
+    progressBar.start(flexCards.length, progressCounter);
+    const uniqueNames = new Set<string>();
 
     const limitedFlexCards = flexCards.slice(0, 200);
 
@@ -134,8 +135,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       };
 
       // Check for name changes due to API naming requirements
-      const originalName:string = flexCardName;
-      const cleanedName:string = this.cleanName(originalName);
+      const originalName: string = flexCardName;
+      const cleanedName: string = this.cleanName(originalName);
       if (cleanedName !== originalName) {
         flexCardAssessmentInfo.warnings.push(
           this.messages.getMessage('cardNameChangeMessage', [originalName, cleanedName])
@@ -144,9 +145,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
       // Check for duplicate names
       if (uniqueNames.has(cleanedName)) {
-        flexCardAssessmentInfo.warnings.push(
-          this.messages.getMessage('duplicateCardNameMessage', [cleanedName])
-        );
+        flexCardAssessmentInfo.warnings.push(this.messages.getMessage('duplicateCardNameMessage', [cleanedName]));
       }
       uniqueNames.add(cleanedName);
 
@@ -181,7 +180,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (dataSource.type === Constants.DataRaptorComponentName) {
       const originalBundle = dataSource.value?.bundle;
       if (originalBundle) {
-        const cleanedBundle:string = this.cleanName(originalBundle);
+        const cleanedBundle: string = this.cleanName(originalBundle);
         flexCardAssessmentInfo.dependenciesDR.push(cleanedBundle);
 
         // Add warning if DataRaptor name will change
@@ -392,7 +391,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   }
 
   // Upload All the VlocityCard__c records to OmniUiCard
-  private async uploadAllCards(cards: any[], progressBar: ReturnType<typeof createProgressBar>): Promise<Map<string, UploadRecordResult>> {
+  private async uploadAllCards(
+    cards: any[],
+    progressBar: ReturnType<typeof createProgressBar>
+  ): Promise<Map<string, UploadRecordResult>> {
     const cardsUploadInfo = new Map<string, UploadRecordResult>();
     const originalRecords = new Map<string, any>();
     const uniqueNames = new Set<string>();
@@ -486,9 +488,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         }
         if (transformedCardName !== card['Name']) {
           uploadResult.newName = transformedCardName;
-          uploadResult.warnings.unshift(
-            this.messages.getMessage('cardNameChangeMessage', [transformedCardName])
-          );
+          uploadResult.warnings.unshift(this.messages.getMessage('cardNameChangeMessage', [transformedCardName]));
         }
 
         if (uploadResult.id && invalidIpNames.size > 0) {

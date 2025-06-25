@@ -83,7 +83,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
           } catch (ex) {
             Logger.error(JSON.stringify(ex));
             Logger.error(ex.stack);
-            console.log(
+            Logger.logVerbose(
               this.messages.getMessage('formulaSyntaxError', [drItem[this.namespacePrefix + 'Formula__c']])
             );
           }
@@ -91,7 +91,9 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       }
     }
     let progressCounter = 0;
-    let nonMigrationDataRaptors = dataRaptors.filter(dr => dr[this.namespacePrefix + 'Type__c'] !== 'Migration').length;
+    let nonMigrationDataRaptors = dataRaptors.filter(
+      (dr) => dr[this.namespacePrefix + 'Type__c'] !== 'Migration'
+    ).length;
     Logger.log(this.messages.getMessage('foundDataRaptorsToMigrate', [nonMigrationDataRaptors]));
     const progressBar = createProgressBar('Migrating', 'Data Mapper');
     progressBar.start(nonMigrationDataRaptors, progressCounter);
@@ -227,10 +229,11 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const existingDataRaptorNames = new Set<string>();
     const dataRaptorItemsMap = await this.getAllDRToItemsMap();
 
-
     const progressBar = createProgressBar('Assessing', 'Data Mapper');
     let progressCounter = 0;
-    let nonMigrationDataRaptors = dataRaptors.filter(dr => dr[this.namespacePrefix + 'Type__c'] !== 'Migration').length;
+    let nonMigrationDataRaptors = dataRaptors.filter(
+      (dr) => dr[this.namespacePrefix + 'Type__c'] !== 'Migration'
+    ).length;
     Logger.log(this.messages.getMessage('foundDataRaptorsToAssess', [nonMigrationDataRaptors]));
     progressBar.start(nonMigrationDataRaptors, progressCounter);
     // Now process each OmniScript and its elements
@@ -282,9 +285,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
             } catch (ex) {
               Logger.error(JSON.stringify(ex));
               Logger.error(ex.stack);
-              console.log(
-                this.messages.getMessage('formulaSyntaxError', [formula])
-              );
+              Logger.logVerbose(this.messages.getMessage('formulaSyntaxError', [formula]));
             }
           }
         }

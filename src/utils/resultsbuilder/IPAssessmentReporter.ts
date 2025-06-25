@@ -1,124 +1,172 @@
 import { IPAssessmentInfo } from '../interfaces';
-import { generateHtmlTable } from '../reportGenerator/reportGenerator';
+import { OmnistudioOrgDetails } from '../orgUtils';
 import {
-  HeaderColumn,
-  ReportFrameworkParameters,
-  ReportHeaderFormat,
-  TableColumn,
+  FilterGroupParam,
+  ReportHeaderGroupParam,
+  ReportParam,
+  ReportRowParam,
+  SummaryItemDetailParam,
 } from '../reportGenerator/reportInterfaces';
-import { reportingHelper } from './reportingHelper';
+import { createRowDataParam, getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 
 export class IPAssessmentReporter {
-  public static generateIPAssesment(
+  private static rowId = 0;
+  private static rowIdPrefix = 'ip-row-data-';
+  public static getIntegrationProcedureAssessmentData(
     ipAssessmentInfos: IPAssessmentInfo[],
     instanceUrl: string,
-    orgDetails: ReportHeaderFormat[],
-    rollbackFlags: string[]
-  ): string {
-    // Define multi-row headers
-    const headerColumn: HeaderColumn[] = [
-      {
-        label: 'In Package',
-        colspan: 2,
-        subColumn: [
-          {
-            label: 'Name',
-          },
-          {
-            label: 'Record ID',
-          },
-        ],
-      },
-      {
-        label: 'In Core',
-        colspan: 1,
-        subColumn: [
-          {
-            label: 'Name',
-          },
-        ],
-      },
-      {
-        label: 'Summary',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Integration Procedures Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Data Mapper dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Remote Action Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-    ];
-
-    // Define columns
-    const columns: Array<TableColumn<IPAssessmentInfo>> = [
-      {
-        key: 'oldName',
-        cell: (row: IPAssessmentInfo): string => row.oldName,
-        filterValue: (row: IPAssessmentInfo): string => row.oldName,
-        title: (row: IPAssessmentInfo): string => row.oldName,
-      },
-      {
-        key: 'id',
-        cell: (row: IPAssessmentInfo): string => (row.id ? `<a href="${instanceUrl}/${row.id}">${row.id}</a>` : ''),
-        filterValue: (row: IPAssessmentInfo): string => row.id,
-        title: (row: IPAssessmentInfo): string => row.id,
-      },
-      {
-        key: 'name',
-        cell: (row: IPAssessmentInfo): string => row.name || '',
-        filterValue: (row: IPAssessmentInfo): string => row.name,
-        title: (row: IPAssessmentInfo): string => row.name,
-      },
-      {
-        key: 'Summary',
-        cell: (row: IPAssessmentInfo): string => reportingHelper.convertToBuletedList(row.warnings || []),
-        filterValue: (row: IPAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-        title: (row: IPAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesIP',
-        cell: (row: IPAssessmentInfo): string => reportingHelper.decorate(row.dependenciesIP) || '',
-        filterValue: (row: IPAssessmentInfo): string => (row.dependenciesIP ? row.dependenciesIP.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesDR',
-        cell: (row: IPAssessmentInfo): string => reportingHelper.decorate(row.dependenciesDR) || '',
-        filterValue: (row: IPAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesRemoteAction',
-        cell: (row: IPAssessmentInfo): string => reportingHelper.decorate(row.dependenciesRemoteAction) || '',
-        filterValue: (row: IPAssessmentInfo): string =>
-          row.dependenciesRemoteAction ? row.dependenciesRemoteAction.join(', ') : '',
-      },
-    ];
-
-    const reportFrameworkParameters: ReportFrameworkParameters<IPAssessmentInfo> = {
-      headerColumns: headerColumn,
-      columns,
-      rows: ipAssessmentInfos,
-      orgDetails,
-      filters: [],
-      ctaSummary: [],
-      reportHeaderLabel: 'Integration Procedure Assessment',
-      showMigrationBanner: true,
-      rollbackFlags,
-      rollbackFlagName: 'RollbackIPChanges',
-      commandType: 'assess',
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): ReportParam {
+    return {
+      title: 'Integration Procedure Migration Assessment',
+      heading: 'Integration Procedure',
+      org: getOrgDetailsForReport(omnistudioOrgDetails),
+      assessmentDate: new Date().toString(),
+      total: ipAssessmentInfos?.length || 0,
+      filterGroups: this.getFilterGroupsForReport(),
+      headerGroups: this.getHeaderGroupsForReport(),
+      rows: this.getRowsForReport(ipAssessmentInfos, instanceUrl),
+      rollbackFlags: (omnistudioOrgDetails.rollbackFlags || []).includes('RollbackIPChanges')
+        ? ['RollbackIPChanges']
+        : undefined,
     };
-    // Render table
-    const tableHtml = generateHtmlTable(reportFrameworkParameters);
-    return `${tableHtml}`;
+  }
+
+  public static getSummaryData(ipAssessmentInfos: IPAssessmentInfo[]): SummaryItemDetailParam[] {
+    return [
+      {
+        name: 'Can be Automated',
+        count: ipAssessmentInfos.filter(
+          (ipAssessmentInfo) => !ipAssessmentInfo.errors || ipAssessmentInfo.errors.length === 0
+        ).length,
+        cssClass: 'text-success',
+      },
+      {
+        name: 'Has Errors',
+        count: ipAssessmentInfos.filter(
+          (ipAssessmentInfo) => ipAssessmentInfo.errors && ipAssessmentInfo.errors.length > 0
+        ).length,
+        cssClass: 'text-error',
+      },
+    ];
+  }
+
+  private static getRowsForReport(ipAssessmentInfos: IPAssessmentInfo[], instanceUrl: string): ReportRowParam[] {
+    return ipAssessmentInfos.map((ipAssessmentInfo) => ({
+      rowId: `${this.rowIdPrefix}${this.rowId++}`,
+      data: [
+        createRowDataParam('name', ipAssessmentInfo.oldName, true, 1, 1, false),
+        createRowDataParam('id', ipAssessmentInfo.id, false, 1, 1, true, `${instanceUrl}/${ipAssessmentInfo.id}`),
+        createRowDataParam('newName', ipAssessmentInfo.name, false, 1, 1, false),
+        createRowDataParam(
+          'summary',
+          ipAssessmentInfo.infos ? ipAssessmentInfo.infos.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          ipAssessmentInfo.infos
+        ),
+        createRowDataParam(
+          'integrationProcedureDependencies',
+          ipAssessmentInfo.dependenciesIP
+            ? ipAssessmentInfo.dependenciesIP.map((dependency) => dependency.name).join(', ')
+            : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          ipAssessmentInfo.dependenciesIP.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'dataMapperDependencies',
+          ipAssessmentInfo.dependenciesDR
+            ? ipAssessmentInfo.dependenciesDR.map((dependency) => dependency.name).join(', ')
+            : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          ipAssessmentInfo.dependenciesDR.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'remoteActionDependencies',
+          ipAssessmentInfo.dependenciesRemoteAction
+            ? ipAssessmentInfo.dependenciesRemoteAction.map((dependency) => dependency.name).join(', ')
+            : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          ipAssessmentInfo.dependenciesRemoteAction.map((dependency) => dependency.name)
+        ),
+      ],
+    }));
+  }
+
+  private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
+    return [
+      {
+        header: [
+          {
+            name: 'In Package',
+            colspan: 2,
+            rowspan: 1,
+          },
+          {
+            name: 'In Core',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Summary',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Integration Procedure Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Data Mapper Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Data Mapper Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+        ],
+      },
+      {
+        header: [
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Record ID',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+        ],
+      },
+    ];
+  }
+
+  private static getFilterGroupsForReport(): FilterGroupParam[] {
+    return [];
   }
 }

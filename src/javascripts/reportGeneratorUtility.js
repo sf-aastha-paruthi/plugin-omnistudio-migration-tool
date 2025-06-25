@@ -51,7 +51,6 @@ function filterAndSearchTable(tableId) {
     });
     if (noRowsMessage) noRowsMessage.style.display = '';
 
-
     // Update visible row count
     const visibleRows = Array.from(table.rows).filter(
       (row) => row.style.display !== 'none' && row.id !== 'no-rows-message'
@@ -111,21 +110,21 @@ function filterAndSearchTable(tableId) {
 }
 
 function toggleCtaSummaryPanel() {
-        const panel = document.getElementById('cta-summary-panel');
-        const main = document.getElementById('main-panel');
-        const wrapper = document.getElementById('scrollable-wrapper');
+  const panel = document.getElementById('cta-summary-panel');
+  const main = document.getElementById('main-panel');
+  const wrapper = document.getElementById('scrollable-wrapper');
 
-        const isVisible = panel.classList.contains('visible');
-        panel.classList.toggle('visible');
-        main.classList.toggle('shrunk');
+  const isVisible = panel.classList.contains('visible');
+  panel.classList.toggle('visible');
+  main.classList.toggle('shrunk');
 
-        // Ensure smooth scroll into view when opened
-        if (!isVisible) {
-          setTimeout(() => {
-            wrapper.scrollLeft = wrapper.scrollWidth;
-          }, 200); // wait for transition
-        }
-      }
+  // Ensure smooth scroll into view when opened
+  if (!isVisible) {
+    setTimeout(() => {
+      wrapper.scrollLeft = wrapper.scrollWidth;
+    }, 200); // wait for transition
+  }
+}
 function hideOrShowData(reportTable, rowClass, show) {
   const rows = Array.from(reportTable.querySelectorAll(`.${rowClass}`));
   rows.forEach((row) => {
@@ -157,6 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
     filterAndSearchTable(tableContainer.id);
   });
 });
+
+function openReport(ele) {
+  const file = ele.dataset.summary;
+  window.open(file, '_blank');
+}
 
 // Expose globally so HTML inline event handlers can access them
 window.toggleFilterDropdown = toggleFilterDropdown;

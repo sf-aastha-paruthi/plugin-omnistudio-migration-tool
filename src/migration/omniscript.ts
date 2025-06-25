@@ -460,7 +460,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
               } catch (ex) {
                 Logger.error(JSON.stringify(ex));
                 Logger.error(ex.stack);
-                console.log(
+                Logger.logVerbose(
                   this.messages.getMessage('formulaSyntaxError', [ipElement[`${this.namespacePrefix}PropertySet__c`]])
                 );
               }

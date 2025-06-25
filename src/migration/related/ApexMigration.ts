@@ -107,7 +107,9 @@ export class ApexMigration extends BaseRelatedObjectMigration {
       } catch (err) {
         Logger.error(assessMessages.getMessage('errorProcessingApexFile', [file.name]));
         Logger.error(JSON.stringify(err));
-        Logger.error(err.stack);
+        if (err instanceof Error) {
+          Logger.error(err.stack);
+        }
       }
       Logger.logVerbose(assessMessages.getMessage('successfullyProcessedApexFile', [file.name]));
     }

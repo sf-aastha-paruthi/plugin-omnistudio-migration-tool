@@ -1,144 +1,172 @@
 import { DataRaptorAssessmentInfo } from '../interfaces';
+import { OmnistudioOrgDetails } from '../orgUtils';
 import {
-  Filter,
-  HeaderColumn,
-  ReportFrameworkParameters,
-  ReportHeaderFormat,
-  TableColumn,
+  FilterGroupParam,
+  ReportHeaderGroupParam,
+  ReportParam,
+  ReportRowParam,
+  SummaryItemDetailParam,
 } from '../reportGenerator/reportInterfaces';
-import { generateHtmlTable } from '../reportGenerator/reportGenerator';
-import { reportingHelper } from './reportingHelper';
+import { createFilterGroupParam, createRowDataParam, getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 
 export class DRAssessmentReporter {
-  public static generateDRAssesment(
+  private static rowId = 0;
+  private static rowIdPrefix = 'dr-row-data-';
+  public static getDatamapperAssessmentData(
     dataRaptorAssessmentInfos: DataRaptorAssessmentInfo[],
     instanceUrl: string,
-    orgDetails: ReportHeaderFormat[],
-    rollbackFlags: string[]
-  ): string {
-    // Header Column
-    const headerColumn: HeaderColumn[] = [
-      {
-        label: 'In Package',
-        colspan: 2,
-        styles: 'color: purple;',
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'oldName',
-          },
-          {
-            label: 'Record ID',
-            key: 'id',
-          },
-        ],
-      },
-      {
-        label: 'In Core',
-        colspan: 1,
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'name',
-          },
-        ],
-      },
-      {
-        label: 'Type',
-        key: 'type',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Summary',
-        key: 'summary',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Custom Function Changes',
-        key: 'customFunctionChanges',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Apex Dependencies',
-        key: 'apexDependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-    ];
-
-    // Define columns
-    const columns: Array<TableColumn<DataRaptorAssessmentInfo>> = [
-      {
-        key: 'oldName',
-        cell: (row: DataRaptorAssessmentInfo): string => row.oldName,
-        filterValue: (row: DataRaptorAssessmentInfo): string => row.oldName,
-        title: (row: DataRaptorAssessmentInfo): string => row.oldName,
-      },
-      {
-        key: 'id',
-        cell: (row: DataRaptorAssessmentInfo): string =>
-          row.id ? `<a href="${instanceUrl}/${row.id}">${row.id}</a>` : '',
-        filterValue: (row: DataRaptorAssessmentInfo): string => row.id,
-        title: (row: DataRaptorAssessmentInfo): string => row.id,
-      },
-      {
-        key: 'name',
-        cell: (row: DataRaptorAssessmentInfo): string => row.name || '',
-        filterValue: (row: DataRaptorAssessmentInfo): string => row.name,
-        title: (row: DataRaptorAssessmentInfo): string => row.name,
-      },
-      {
-        key: 'type',
-        cell: (row: DataRaptorAssessmentInfo): string => row.type,
-        filterValue: (row: DataRaptorAssessmentInfo): string => row.type,
-        title: (row: DataRaptorAssessmentInfo): string => row.type,
-      },
-      {
-        key: 'summary',
-        cell: (row: DataRaptorAssessmentInfo): string => reportingHelper.convertToBuletedList(row.warnings || []),
-        filterValue: (row: DataRaptorAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-        title: (row: DataRaptorAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-      },
-      {
-        key: 'customFunctionChanges',
-        cell: (row: DataRaptorAssessmentInfo): string =>
-          reportingHelper.decorateChanges(row.formulaChanges, 'Formula') || '',
-        filterValue: (row: DataRaptorAssessmentInfo): typeof row.formulaChanges => row.formulaChanges,
-      },
-      {
-        key: 'apexDependencies',
-        cell: (row: DataRaptorAssessmentInfo): string =>
-          reportingHelper.convertToBuletedList(row.apexDependencies || []),
-        filterValue: (row: DataRaptorAssessmentInfo): string[] => row.apexDependencies,
-      },
-    ];
-
-    const filters: Filter[] = [
-      {
-        label: 'Type',
-        filterOptions: Array.from(new Set(dataRaptorAssessmentInfos.map((row: DataRaptorAssessmentInfo) => row.type))),
-        key: 'type',
-      },
-    ];
-
-    const reportFrameworkParameters: ReportFrameworkParameters<DataRaptorAssessmentInfo> = {
-      headerColumns: headerColumn,
-      columns,
-      rows: dataRaptorAssessmentInfos,
-      orgDetails,
-      filters,
-      ctaSummary: [],
-      reportHeaderLabel: 'Data Mapper Assessment',
-      showMigrationBanner: true,
-      rollbackFlags,
-      rollbackFlagName: 'RollbackDRChanges',
-      commandType: 'assess',
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): ReportParam {
+    return {
+      title: 'Data Mapper Migration Assessment',
+      heading: 'Data Mapper',
+      org: getOrgDetailsForReport(omnistudioOrgDetails),
+      assessmentDate: new Date().toString(),
+      total: dataRaptorAssessmentInfos?.length || 0,
+      filterGroups: this.getFilterGroupsForReport(),
+      headerGroups: this.getHeaderGroupsForReport(),
+      rows: this.getRowsForReport(dataRaptorAssessmentInfos, instanceUrl),
+      rollbackFlags: (omnistudioOrgDetails.rollbackFlags || []).includes('RollbackDRChanges')
+        ? ['RollbackDRChanges']
+        : undefined,
     };
-    // Render table
-    const tableHtml = generateHtmlTable(reportFrameworkParameters);
-    return `${tableHtml}`;
+  }
+
+  public static getSummaryData(dataRaptorAssessmentInfos: DataRaptorAssessmentInfo[]): SummaryItemDetailParam[] {
+    return [
+      {
+        name: 'Can be Automated',
+        count: dataRaptorAssessmentInfos.filter(
+          (dataRaptorAssessmentInfo) =>
+            !dataRaptorAssessmentInfo.warnings || dataRaptorAssessmentInfo.warnings.length === 0
+        ).length,
+        cssClass: 'text-success',
+      },
+      {
+        name: 'Has Warnings',
+        count: dataRaptorAssessmentInfos.filter(
+          (dataRaptorAssessmentInfo) =>
+            dataRaptorAssessmentInfo.warnings && dataRaptorAssessmentInfo.warnings.length > 0
+        ).length,
+        cssClass: 'text-warning',
+      },
+    ];
+  }
+
+  private static getFilterGroupsForReport(): FilterGroupParam[] {
+    return [createFilterGroupParam('Filter By Type', 'type', ['Extract', 'Transform', 'Load', 'Turbo Extract'])];
+  }
+
+  private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
+    return [
+      {
+        header: [
+          {
+            name: 'In Package',
+            colspan: 2,
+            rowspan: 1,
+          },
+          {
+            name: 'In Core',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Type',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Summary',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Custom Function Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Apex Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+        ],
+      },
+      {
+        header: [
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Record ID',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+        ],
+      },
+    ];
+  }
+
+  private static getRowsForReport(
+    dataRaptorAssessmentInfos: DataRaptorAssessmentInfo[],
+    instanceUrl: string
+  ): ReportRowParam[] {
+    return dataRaptorAssessmentInfos.map((dataRaptorAssessmentInfo) => ({
+      rowId: `${this.rowIdPrefix}${this.rowId++}`,
+      data: [
+        createRowDataParam('name', dataRaptorAssessmentInfo.oldName, true, 1, 1, false),
+        createRowDataParam(
+          'id',
+          dataRaptorAssessmentInfo.id,
+          false,
+          1,
+          1,
+          true,
+          `${instanceUrl}/${dataRaptorAssessmentInfo.id}`
+        ),
+        createRowDataParam('newName', dataRaptorAssessmentInfo.name, false, 1, 1, false),
+        createRowDataParam('type', dataRaptorAssessmentInfo.type, false, 1, 1, false),
+        createRowDataParam(
+          'summary',
+          dataRaptorAssessmentInfo.infos ? dataRaptorAssessmentInfo.infos.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          dataRaptorAssessmentInfo.infos
+        ),
+        createRowDataParam(
+          'customFunctionDependencies',
+          dataRaptorAssessmentInfo.formulaChanges
+            ? dataRaptorAssessmentInfo.formulaChanges.map((change) => `${change.old} -> ${change.new}`).join(', ')
+            : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          dataRaptorAssessmentInfo.formulaChanges.map((change) => `${change.old} -> ${change.new}`)
+        ),
+        createRowDataParam(
+          'apexDependencies',
+          dataRaptorAssessmentInfo.apexDependencies ? dataRaptorAssessmentInfo.apexDependencies.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          dataRaptorAssessmentInfo.apexDependencies
+        ),
+      ],
+    }));
   }
 }

@@ -29,7 +29,7 @@
 .dashboard-module-card {
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   flex: 1 1 320px;
   min-width: 320px;
   padding: 24px;
@@ -83,4 +83,4 @@
 .dashboard-module-btn:hover {
   background: #1976d2;
   color: #fff;
-} 
+}

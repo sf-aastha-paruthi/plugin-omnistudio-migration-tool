@@ -1,0 +1,68 @@
+<html>
+
+<head>
+  <title>{{title}}</title>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.17.5/styles/salesforce-lightning-design-system.min.css" />
+  <link rel="stylesheet" href="reportGenerator.css" />
+  <script src="reportGeneratorUtility.js"></script>
+</head>
+
+<body>
+  <div class="slds-m-around_medium">
+    <div class="slds-text-heading_large">{{heading}}</div>
+    <div class="header-container">
+      <div class="org-details-section">
+        <div class="label-key">Org Name</div>
+        <div class="label-value">{{org.name}}</div>
+      </div>
+
+      <div class="org-details-section">
+        <div class="label-key">Org Id</div>
+        <div class="label-value">{{org.id}}</div>
+      </div>
+
+      <div class="org-details-section">
+        <div class="label-key">Namespace</div>
+        <div class="label-value">{{org.namespace}}</div>
+      </div>
+
+      <div class="org-details-section">
+        <div class="label-key">Data Model</div>
+        <div class="label-value">{{org.dataModel}}</div>
+      </div>
+
+      <div class="org-details-section">
+        <div class="label-key">Assessment Date and Time</div>
+        <div class="label-value">{{assessmentDate}}</div>
+      </div>
+    </div>
+
+    <div class="details-body">
+      <c:for items=(summaryItems) var="summary">
+        <div class="slds-box slds-box_small slds-box_body-spacing">
+          <div class="detail-row">
+            <div class="detail-item slds-text-heading_medium">{{summary.name}}</div>
+            <div class="detail-item slds-text-heading_medium">{{summary.total}}</div>
+          </div>
+          <hr />
+          <c:for items=(summary.data) var="item">
+            <div class="detail-row">
+              <div class="detail-item">{{item.name}}</div>
+              <div class="(item.cssClass)">{{item.count}}</div>
+            </div>
+          </c:for>
+
+          <div class="detail-row card-footer">
+            <button class="slds-button_stretch slds-button slds-button_neutral" data-summary="(summary.file)"
+              onclick="openReport(this)">
+              View Report
+            </button>
+          </div>
+        </div>
+      </c:for>
+    </div>
+  </div>
+</body>
+
+</html>

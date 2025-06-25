@@ -23,7 +23,7 @@ import OmnistudioRelatedObjectMigrationFacade from '../../../migration/related/O
 import { generatePackageXml } from '../../../utils/generatePackageXml';
 import { OmnistudioOrgDetails, OrgUtils } from '../../../utils/orgUtils';
 import { Constants } from '../../../utils/constants/stringContants';
-import { OrgPreferences } from '../../../utils/orgpreferences';
+import { OrgPreferences } from '../../../utils/orgPreferences';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -142,48 +142,12 @@ export default class Migrate extends OmniStudioBaseCommand {
     migrationObjects = this.getMigrationObjects(migrateOnly, migrationObjects, namespace, conn, allVersions);
     // Migrate individual objects
     const debugTimer = DebugTimer.getInstance();
-    let objectMigrationResults: MigratedObject[] = [];
     // We need to truncate the standard objects first
-    let allTruncateComplete = true;
-    for (const cls of migrationObjects.reverse()) {
-      try {
-        Logger.log(messages.getMessage('cleaningComponent', [cls.getName()]));
-        debugTimer.lap('Cleaning: ' + cls.getName());
-        await cls.truncate();
-        Logger.log(messages.getMessage('cleaningDone', [cls.getName()]));
-      } catch (ex: any) {
-        allTruncateComplete = false;
-        objectMigrationResults.push({
-          name: cls.getName(),
-          errors: [ex.message],
-        });
-      }
-    }
+    let objectMigrationResults = await this.truncateObjects(migrationObjects, debugTimer);
+    const allTruncateComplete = objectMigrationResults.length === 0;
 
     if (allTruncateComplete) {
-      for (const cls of migrationObjects.reverse()) {
-        try {
-          Logger.log(messages.getMessage('migratingComponent', [cls.getName()]));
-          debugTimer.lap('Migrating: ' + cls.getName());
-          const results = await cls.migrate();
-          Logger.log(messages.getMessage('migrationCompleted', [cls.getName()]));
-          objectMigrationResults = objectMigrationResults.concat(
-            results.map((r) => {
-              return {
-                name: r.name,
-                data: this.mergeRecordAndUploadResults(r, cls),
-              };
-            })
-          );
-        } catch (ex: any) {
-          Logger.error(JSON.stringify(ex));
-          Logger.error(ex.stack);
-          objectMigrationResults.push({
-            name: cls.getName(),
-            errors: [ex.message],
-          });
-        }
-      }
+      objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer);
     }
 
     // Stop the debug timer
@@ -210,6 +174,52 @@ export default class Migrate extends OmniStudioBaseCommand {
 
     // Return results needed for --json flag
     return { objectMigrationResults };
+  }
+
+  private async truncateObjects(migrationObjects: MigrationTool[], debugTimer: DebugTimer): Promise<MigratedObject[]> {
+    const objectMigrationResults: MigratedObject[] = [];
+    for (const cls of migrationObjects.reverse()) {
+      try {
+        Logger.log(messages.getMessage('cleaningComponent', [cls.getName()]));
+        debugTimer.lap('Cleaning: ' + cls.getName());
+        await cls.truncate();
+        Logger.log(messages.getMessage('cleaningDone', [cls.getName()]));
+      } catch (ex: any) {
+        objectMigrationResults.push({
+          name: cls.getName(),
+          errors: [ex.message],
+        });
+      }
+    }
+    return objectMigrationResults;
+  }
+
+  private async migrateObjects(migrationObjects: MigrationTool[], debugTimer: DebugTimer): Promise<MigratedObject[]> {
+    let objectMigrationResults: MigratedObject[] = [];
+    for (const cls of migrationObjects.reverse()) {
+      try {
+        Logger.log(messages.getMessage('migratingComponent', [cls.getName()]));
+        debugTimer.lap('Migrating: ' + cls.getName());
+        const results = await cls.migrate();
+        Logger.log(messages.getMessage('migrationCompleted', [cls.getName()]));
+        objectMigrationResults = objectMigrationResults.concat(
+          results.map((r) => {
+            return {
+              name: r.name,
+              data: this.mergeRecordAndUploadResults(r, cls),
+            };
+          })
+        );
+      } catch (ex: any) {
+        Logger.error(JSON.stringify(ex));
+        Logger.error(ex.stack);
+        objectMigrationResults.push({
+          name: cls.getName(),
+          errors: [ex.message],
+        });
+      }
+    }
+    return objectMigrationResults;
   }
 
   private getMigrationObjects(

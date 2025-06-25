@@ -434,4 +434,10 @@ hr {
 
 td {
   border-left: 1px solid #e5e5e5;
+  word-wrap: break-word;
+  white-space: normal !important;
+}
+
+.filter-checkbox {
+  margin-right: 0.25rem;
 }

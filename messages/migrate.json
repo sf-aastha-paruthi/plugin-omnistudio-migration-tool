@@ -79,5 +79,5 @@
   "alreadyStandardModel": "The org is already on standard data model.",
   "cardAuthorNameChangeMessage": "Card author name has been modified to fit naming rules: {0}",
   "cardNameChangeMessage": "Card name has been modified to fit naming rules: {0}",
-  "duplicateCardNameMessage": "Potential duplicate: Another card has the same name {0} after name cleaning. This may cause conflicts during migration",
+  "duplicateCardNameMessage": "Potential duplicate: Another card has the same name {0} after name cleaning. This may cause conflicts during migration"
 }

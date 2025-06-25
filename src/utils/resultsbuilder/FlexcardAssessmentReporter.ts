@@ -1,112 +1,158 @@
 import { FlexCardAssessmentInfo } from '../interfaces';
-import { generateHtmlTable } from '../reportGenerator/reportGenerator';
+import { OmnistudioOrgDetails } from '../orgUtils';
 import {
-  HeaderColumn,
-  ReportFrameworkParameters,
-  ReportHeaderFormat,
-  TableColumn,
+  FilterGroupParam,
+  ReportHeaderGroupParam,
+  ReportParam,
+  ReportRowParam,
+  SummaryItemDetailParam,
 } from '../reportGenerator/reportInterfaces';
+import { createRowDataParam, getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 
 export class FlexcardAssessmentReporter {
-  public static generateFlexcardAssesment(
-    flexcardAssessmentInfos: FlexCardAssessmentInfo[],
+  private static rowId = 0;
+  private static rowIdPrefix = 'flexcard-row-data-';
+  public static getFlexcardAssessmentData(
+    flexCardAssessmentInfos: FlexCardAssessmentInfo[],
     instanceUrl: string,
-    org: ReportHeaderFormat[]
-  ): string {
-    // Define multi-row headers
-    const headerColumn: HeaderColumn[] = [
-      {
-        label: 'In Package',
-        colspan: 2,
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'oldName',
-          },
-          {
-            label: 'Record ID',
-            key: 'id',
-          },
-        ],
-      },
-      {
-        label: 'In Core',
-        colspan: 1,
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'name',
-          },
-        ],
-      },
-      {
-        label: 'Omniscript Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Integration Procedures Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Data Mapper dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-    ];
-
-    // Define columns
-    const columns: Array<TableColumn<FlexCardAssessmentInfo>> = [
-      {
-        key: 'oldName',
-        cell: (row: FlexCardAssessmentInfo): string => row.name || '',
-        filterValue: (row: FlexCardAssessmentInfo): string => row.name,
-        title: (row: FlexCardAssessmentInfo): string => row.name,
-      },
-      {
-        key: 'id',
-        cell: (row: FlexCardAssessmentInfo): string =>
-          row.id ? `<a href="${instanceUrl}/${row.id}">${row.id}</a>` : '',
-        filterValue: (row: FlexCardAssessmentInfo): string => row.id,
-        title: (row: FlexCardAssessmentInfo): string => row.id,
-      },
-      {
-        key: 'name',
-        cell: (row: FlexCardAssessmentInfo): string => row.name || '',
-        filterValue: (row: FlexCardAssessmentInfo): string => row.name,
-        title: (row: FlexCardAssessmentInfo): string => row.name,
-      },
-      {
-        key: 'dependenciesOS',
-        cell: (row: FlexCardAssessmentInfo): string => (row.dependenciesOS ? row.dependenciesOS.join(', ') : ''),
-        filterValue: (row: FlexCardAssessmentInfo): string => (row.dependenciesOS ? row.dependenciesOS.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesIP',
-        cell: (row: FlexCardAssessmentInfo): string => (row.dependenciesIP ? row.dependenciesIP.join(', ') : ''),
-        filterValue: (row: FlexCardAssessmentInfo): string => (row.dependenciesIP ? row.dependenciesIP.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesDR',
-        cell: (row: FlexCardAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
-        filterValue: (row: FlexCardAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
-      },
-    ];
-
-    const reportFrameworkParameters: ReportFrameworkParameters<FlexCardAssessmentInfo> = {
-      headerColumns: headerColumn,
-      columns,
-      rows: flexcardAssessmentInfos,
-      orgDetails: org,
-      filters: [],
-      ctaSummary: [],
-      reportHeaderLabel: 'Flexcard Components Assessment',
-      showMigrationBanner: true,
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): ReportParam {
+    return {
+      title: 'Flexcard Migration Assessment',
+      heading: 'Flexcard',
+      org: getOrgDetailsForReport(omnistudioOrgDetails),
+      assessmentDate: new Date().toString(),
+      total: flexCardAssessmentInfos?.length || 0,
+      filterGroups: this.getFilterGroupsForReport(),
+      headerGroups: this.getHeaderGroupsForReport(),
+      rows: this.getRowsForReport(flexCardAssessmentInfos, instanceUrl),
     };
+  }
 
-    // Render table
-    const tableHtml = generateHtmlTable(reportFrameworkParameters);
-    return `${tableHtml}`;
+  public static getSummaryData(flexCardAssessmentInfos: FlexCardAssessmentInfo[]): SummaryItemDetailParam[] {
+    return [
+      {
+        name: 'Can be Automated',
+        count: flexCardAssessmentInfos.filter(
+          (flexCardAssessmentInfo) => !flexCardAssessmentInfo.warnings || flexCardAssessmentInfo.warnings.length === 0
+        ).length,
+        cssClass: 'text-success',
+      },
+      {
+        name: 'Has Warnings',
+        count: flexCardAssessmentInfos.filter(
+          (flexCardAssessmentInfo) => flexCardAssessmentInfo.warnings && flexCardAssessmentInfo.warnings.length > 0
+        ).length,
+        cssClass: 'text-warning',
+      },
+    ];
+  }
+
+  private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
+    return [
+      {
+        header: [
+          {
+            name: 'In Package',
+            colspan: 2,
+            rowspan: 1,
+          },
+          {
+            name: 'In Core',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'OmniScript Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Integration Procedure Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Data Mapper Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+        ],
+      },
+      {
+        header: [
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Record ID',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+        ],
+      },
+    ];
+  }
+  private static getFilterGroupsForReport(): FilterGroupParam[] {
+    return [];
+  }
+
+  private static getRowsForReport(
+    flexCardAssessmentInfos: FlexCardAssessmentInfo[],
+    instanceUrl: string
+  ): ReportRowParam[] {
+    return flexCardAssessmentInfos.map((flexCardAssessmentInfo) => ({
+      rowId: `${this.rowIdPrefix}${this.rowId++}`,
+      data: [
+        createRowDataParam('name', flexCardAssessmentInfo.name, true, 1, 1, false),
+        createRowDataParam(
+          'recordId',
+          flexCardAssessmentInfo.id,
+          false,
+          1,
+          1,
+          true,
+          `${instanceUrl}/${flexCardAssessmentInfo.id}`
+        ),
+        createRowDataParam('newName', flexCardAssessmentInfo.name, false, 1, 1, false),
+        createRowDataParam(
+          'omniScriptDependencies',
+          flexCardAssessmentInfo.dependenciesOS ? flexCardAssessmentInfo.dependenciesOS.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          flexCardAssessmentInfo.dependenciesOS
+        ),
+        createRowDataParam(
+          'integrationProcedureDependencies',
+          flexCardAssessmentInfo.dependenciesIP ? flexCardAssessmentInfo.dependenciesIP.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          flexCardAssessmentInfo.dependenciesIP
+        ),
+        createRowDataParam(
+          'dataMapperDependencies',
+          flexCardAssessmentInfo.dependenciesDR ? flexCardAssessmentInfo.dependenciesDR.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          flexCardAssessmentInfo.dependenciesDR
+        ),
+      ],
+    }));
   }
 }

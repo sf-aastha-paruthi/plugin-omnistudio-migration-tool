@@ -1,0 +1,201 @@
+<html>
+
+<head>
+  <title>{{title}}</title>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.17.5/styles/salesforce-lightning-design-system.min.css" />
+  <link rel="stylesheet" href="reportGenerator.css" />
+  <script src="reportGeneratorUtility.js"></script>
+</head>
+
+<body>
+  <div class="slds-m-around_medium">
+    <div class="slds-text-heading_large">
+      <span>{{heading}}</span>
+      <span>&nbsp;Migration Report</span>
+    </div>
+
+    <div class="rpt-table-container" id="report-table">
+      <div class="header-container">
+        <div class="org-details-section">
+          <div class="label-key">Org Name</div>
+          <div class="label-value">{{org.name}}</div>
+        </div>
+
+        <div class="org-details-section">
+          <div class="label-key">Org Id</div>
+          <div class="label-value">{{org.id}}</div>
+        </div>
+
+        <div class="org-details-section">
+          <div class="label-key">Namespace</div>
+          <div class="label-value">{{org.namespace}}</div>
+        </div>
+
+        <div class="org-details-section">
+          <div class="label-key">Data Model</div>
+          <div class="label-value">{{org.dataModel}}</div>
+        </div>
+
+        <div class="org-details-section">
+          <div class="label-key">Assessment Date and Time</div>
+          <div class="label-value">{{assessmentDate}}</div>
+        </div>
+      </div>
+
+      <c:if exp={$filterGroups.length>0}>
+        <div class="filter-dropdown-container">
+          <div class="filter-header-bar">
+            <!-- Row count display -->
+            <div class="row-count-display" id="row-count">Loading records...</div>
+
+            <!-- Search and filter controls -->
+            <div class="search-container">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="black"
+                viewBox="0 0 16 16">
+                <path
+                  d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+              </svg>
+              <input type="text" id="name-search-input" class="search-input" placeholder="Search by Name"
+                oninput="filterAndSearchTable('report-table')" />
+            </div>
+
+            <div class="filter-toggle-button" onclick="toggleFilterDropdown('report-table')">
+              Filters
+              <svg id="chevron-down" class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="none" stroke="currentColor" stroke-width="2"
+                  d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708" />
+              </svg>
+              <svg id="chevron-up" class="chevron-icon hidden" xmlns="http://www.w3.org/2000/svg" width="10" height="10"
+                fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="none" stroke="currentColor" stroke-width="2"
+                  d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708z" />
+              </svg>
+            </div>
+          </div>
+
+          <div id="filter-dropdown" class="filter-dropdown">
+            <c:for items=(filterGroups) var="filterGroup">
+              <div class="filter-group">
+                <div class="filter-group-label">{{filterGroup.label}}</div>
+                <div class="filter-options">
+                  <c:for items=(filterGroup.filters) var="filter">
+                    <label>
+                      <input type="checkbox" class="filter-checkbox" data-filter-key="(filterGroup.key)"
+                        value="(filter.label)" checked onclick="filterAndSearchTable('report-table')" />
+                      {{filter.label}}
+                    </label>
+                  </c:for>
+                </div>
+              </div>
+            </c:for>
+          </div>
+        </div>
+      </c:if>
+      <div class="table-container">
+        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_col-bordered"
+          aria-label="">
+          <thead>
+            <c:for items=(headerGroups) var="headerGroup">
+              <tr>
+                <c:for items=(headerGroup.header) var="header">
+                  <th style="width: auto" colspan="(header.colspan)" rowspan="(header.rowspan)">
+                    <div class="filter-header">
+                      <span class="filter-label">{{header.name}}</span>
+                    </div>
+                  </th>
+                </c:for>
+              </tr>
+            </c:for>
+          </thead>
+
+          <tbody id="filterable-table-body">
+            <c:for items=(rows) var="row">
+              <tr class="(row.rowId)">
+                <c:for items=(row.data) var="cell">
+                  <c:if exp={!$cell.isHref}>
+                    <c:if exp={$cell.searchable}>
+                      <td data-name="(cell.value)" rowspan="(cell.rowspan)" colspan="(cell.colspan)"
+                        title="(cell.title)" key="(cell.key)" value="(cell.value)">
+                        <c:if exp={Array.isArray($cell.title)}>
+                          <c:for items=(cell.title) var="value">
+                            <div>{{value}}</div>
+                          </c:for>
+                        </c:if>
+                        <c:if exp={!Array.isArray($cell.title)}> {{cell.title}} </c:if>
+                      </td>
+                    </c:if>
+                    <c:if exp={!$cell.searchable}>
+                      <td rowspan="(cell.rowspan)" colspan="(cell.colspan)" title="(cell.title)" key="(cell.key)"
+                        value="(cell.value)">
+                        <c:if exp={Array.isArray($cell.title)}>
+                          <c:for items=(cell.title) var="value">
+                            <div>{{value}}</div>
+                          </c:for>
+                        </c:if>
+                        <c:if exp={!Array.isArray($cell.title)}> {{cell.title}} </c:if>
+                      </td>
+                    </c:if>
+                  </c:if>
+                  <c:if exp={$cell.isHref}>
+                    <c:if exp={$cell.searchable}>
+                      <td data-name="(cell.value)" rowspan="(cell.rowspan)" colspan="(cell.colspan)"
+                        title="(cell.title)" key="(cell.key)" value="(cell.value)">
+                        <c:if exp={Array.isArray($cell.title)}>
+                          <c:for items=(cell.title) var="value">
+                            <div><a href="(cell.uri)">{{value}}</a></div>
+                          </c:for>
+                        </c:if>
+                        <c:if exp={!Array.isArray($cell.title)}>
+                          <a href="(cell.uri)">{{cell.title}}</a>
+                        </c:if>
+                      </td>
+                    </c:if>
+                    <c:if exp={!$cell.searchable}>
+                      <td rowspan="(cell.rowspan)" colspan="(cell.colspan)" title="(cell.title)" key="(cell.key)"
+                        value="(cell.value)">
+                        <c:if exp={Array.isArray($cell.title)}>
+                          <c:for items=(cell.title) var="value">
+                            <div><a href="(cell.uri)">{{value}}</a></div>
+                          </c:for>
+                        </c:if>
+                        <c:if exp={!Array.isArray($cell.title)}>
+                          <a href="(cell.uri)">{{cell.title}}</a>
+                        </c:if>
+                      </td>
+                    </c:if>
+                  </c:if>
+                </c:for>
+              </tr>
+            </c:for>
+            <tr id="no-rows-message" style="display: none">
+              <td colspan="100%" style="text-align: center; padding: 16px; color: #666">
+                No matching records found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <c:if exp={Array.isArray($rollbackFlags)}>
+        <div class="slds-box" style="background-color: white; margin-top: 20px">
+          <div class="slds-text-heading_medium">Rollback Flags Disabled</div>
+          <div style="margin-block: 15px">
+            <p>The following rollback flag(s) were disabled during migration:</p>
+            <ul class="slds-list_dotted">
+              <c:for items=(rollbackFlags) var="flag">
+                <li class="slds-item slds-text-color_destructive">{{flag}}</li>
+              </c:for>
+            </ul>
+            <p>
+              <strong>Note:</strong>
+              Following flag(s) are no longer supported after migration. For assistance, please contact support.
+            </p>
+          </div>
+        </div>
+      </c:if>
+    </div>
+  </div>
+</body>
+
+</html>

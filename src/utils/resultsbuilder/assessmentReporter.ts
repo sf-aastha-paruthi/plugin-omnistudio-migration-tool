@@ -2,11 +2,13 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import fs from 'fs';
 import open from 'open';
-import { AssessmentInfo, nameLocation } from '../interfaces';
-import { ReportHeaderFormat } from '../reportGenerator/reportInterfaces';
+import { AssessmentInfo } from '../interfaces';
+import { DashboardParam } from '../reportGenerator/reportInterfaces';
 import { OmnistudioOrgDetails } from '../orgUtils';
 import { Constants } from '../constants/stringContants';
 import { pushAssestUtilites } from '../file/fileUtil';
+import { TemplateParser } from '../templateParser/generate';
+import { getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 import { OSAssessmentReporter } from './OSAssessmentReporter';
 import { ApexAssessmentReporter } from './ApexAssessmentReporter';
 import { IPAssessmentReporter } from './IPAssessmentReporter';
@@ -14,6 +16,16 @@ import { DRAssessmentReporter } from './DRAssessmentReporter';
 import { FlexcardAssessmentReporter } from './FlexcardAssessmentReporter';
 
 export class AssessmentReporter {
+  private static basePath = process.cwd() + '/assessment_reports';
+  private static omniscriptAssessmentFilePath = this.basePath + '/omniscript_assessment.html';
+  private static flexcardAssessmentFilePath = this.basePath + '/flexcard_assessment.html';
+  private static integrationProcedureAssessmentFilePath = this.basePath + '/integration_procedure_assessment.html';
+  private static dataMapperAssessmentFilePath = this.basePath + '/datamapper_assessment.html';
+  private static apexAssessmentFilePath = this.basePath + '/apex_assessment.html';
+  private static dashboardFilePath = this.basePath + '/dashboard.html';
+  private static dashboardTemplate = process.cwd() + '/src/templates/dashboard.template';
+  // TODO: Uncomment code once MVP for migration is completed
+  // private static lwcAssessmentFilePath = this.basePath + '/lwc_assessment.html';
   public static async generate(
     result: AssessmentInfo,
     instanceUrl: string,
@@ -21,30 +33,42 @@ export class AssessmentReporter {
     assessOnly: string,
     relatedObjects: string[]
   ): Promise<void> {
-    const basePath = process.cwd() + '/assessment_reports';
-    fs.mkdirSync(basePath, { recursive: true });
-    const omniscriptAssessmentFilePath = basePath + '/omniscript_assessment.html';
-    const flexcardAssessmentFilePath = basePath + '/flexcard_assessment.html';
-    const integrationProcedureAssessmentFilePath = basePath + '/integration_procedure_assessment.html';
-    const dataMapperAssessmentFilePath = basePath + '/datamapper_assessment.html';
-    const apexAssessmentFilePath = basePath + '/apex_assessment.html';
-    // TODO: Uncomment code once MVP for migration is completed
-    // const lwcAssessmentFilePath = basePath + '/lwc_assessment.html';
-    const orgDetails: ReportHeaderFormat[] = this.formattedOrgDetails(omnistudioOrgDetails);
+    fs.mkdirSync(this.basePath, { recursive: true });
 
+    const assessmentReportTemplate = fs.readFileSync(
+      process.cwd() + '/src/templates/assessmentReport.template',
+      'utf8'
+    );
     if (!assessOnly) {
       this.createDocument(
-        omniscriptAssessmentFilePath,
-        OSAssessmentReporter.generateOSAssesment(result.omniAssessmentInfo.osAssessmentInfos, instanceUrl, orgDetails, omnistudioOrgDetails.rollbackFlags)
+        this.omniscriptAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          OSAssessmentReporter.getOmniscriptAssessmentData(
+            result.omniAssessmentInfo.osAssessmentInfos,
+            instanceUrl,
+            omnistudioOrgDetails
+          )
+        )
       );
 
       this.createDocument(
-        flexcardAssessmentFilePath,
-        FlexcardAssessmentReporter.generateFlexcardAssesment(result.flexCardAssessmentInfos, instanceUrl, orgDetails)
+        this.flexcardAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          FlexcardAssessmentReporter.getFlexcardAssessmentData(
+            result.flexCardAssessmentInfos,
+            instanceUrl,
+            omnistudioOrgDetails
+          )
+        )
       );
       this.createDocument(
-        apexAssessmentFilePath,
-        ApexAssessmentReporter.generateApexAssesment(result.apexAssessmentInfos, instanceUrl, orgDetails)
+        this.apexAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          ApexAssessmentReporter.getApexAssessmentData(result.apexAssessmentInfos, omnistudioOrgDetails)
+        )
       );
 
       // this.createDocument(
@@ -53,51 +77,83 @@ export class AssessmentReporter {
       // );
 
       this.createDocument(
-        integrationProcedureAssessmentFilePath,
-        IPAssessmentReporter.generateIPAssesment(result.omniAssessmentInfo.ipAssessmentInfos, instanceUrl, orgDetails, omnistudioOrgDetails.rollbackFlags)
+        this.integrationProcedureAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          IPAssessmentReporter.getIntegrationProcedureAssessmentData(
+            result.omniAssessmentInfo.ipAssessmentInfos,
+            instanceUrl,
+            omnistudioOrgDetails
+          )
+        )
       );
 
       this.createDocument(
-        dataMapperAssessmentFilePath,
-        DRAssessmentReporter.generateDRAssesment(result.dataRaptorAssessmentInfos, instanceUrl, orgDetails, omnistudioOrgDetails.rollbackFlags)
+        this.dataMapperAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          DRAssessmentReporter.getDatamapperAssessmentData(
+            result.dataRaptorAssessmentInfos,
+            instanceUrl,
+            omnistudioOrgDetails
+          )
+        )
       );
     } else {
       switch (assessOnly) {
         case Constants.Omniscript:
           this.createDocument(
-            omniscriptAssessmentFilePath,
-            OSAssessmentReporter.generateOSAssesment(
-              result.omniAssessmentInfo.osAssessmentInfos,
-              instanceUrl,
-              orgDetails,
-              omnistudioOrgDetails.rollbackFlags
+            this.omniscriptAssessmentFilePath,
+            TemplateParser.generate(
+              assessmentReportTemplate,
+              OSAssessmentReporter.getOmniscriptAssessmentData(
+                result.omniAssessmentInfo.osAssessmentInfos,
+                instanceUrl,
+                omnistudioOrgDetails
+              )
             )
           );
           break;
 
         case Constants.Flexcard:
           this.createDocument(
-            flexcardAssessmentFilePath,
-            FlexcardAssessmentReporter.generateFlexcardAssesment(result.flexCardAssessmentInfos, instanceUrl, orgDetails)
+            this.flexcardAssessmentFilePath,
+            TemplateParser.generate(
+              assessmentReportTemplate,
+              FlexcardAssessmentReporter.getFlexcardAssessmentData(
+                result.flexCardAssessmentInfos,
+                instanceUrl,
+                omnistudioOrgDetails
+              )
+            )
           );
           break;
 
         case Constants.IntegrationProcedure:
           this.createDocument(
-            integrationProcedureAssessmentFilePath,
-            IPAssessmentReporter.generateIPAssesment(
-              result.omniAssessmentInfo.ipAssessmentInfos,
-              instanceUrl,
-              orgDetails,
-              omnistudioOrgDetails.rollbackFlags
+            this.integrationProcedureAssessmentFilePath,
+            TemplateParser.generate(
+              assessmentReportTemplate,
+              IPAssessmentReporter.getIntegrationProcedureAssessmentData(
+                result.omniAssessmentInfo.ipAssessmentInfos,
+                instanceUrl,
+                omnistudioOrgDetails
+              )
             )
           );
           break;
 
         case Constants.DataMapper:
           this.createDocument(
-            dataMapperAssessmentFilePath,
-            DRAssessmentReporter.generateDRAssesment(result.dataRaptorAssessmentInfos, instanceUrl, orgDetails, omnistudioOrgDetails.rollbackFlags)
+            this.dataMapperAssessmentFilePath,
+            TemplateParser.generate(
+              assessmentReportTemplate,
+              DRAssessmentReporter.getDatamapperAssessmentData(
+                result.dataRaptorAssessmentInfos,
+                instanceUrl,
+                omnistudioOrgDetails
+              )
+            )
           );
           break;
 
@@ -107,8 +163,11 @@ export class AssessmentReporter {
 
     if (relatedObjects && relatedObjects.includes(Constants.Apex)) {
       this.createDocument(
-        apexAssessmentFilePath,
-        ApexAssessmentReporter.generateApexAssesment(result.apexAssessmentInfos, instanceUrl, orgDetails)
+        this.apexAssessmentFilePath,
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          ApexAssessmentReporter.getApexAssessmentData(result.apexAssessmentInfos, omnistudioOrgDetails)
+        )
       );
     }
     // TODO: Uncomment code once MVP for migration is completed
@@ -118,118 +177,69 @@ export class AssessmentReporter {
     //     LWCAssessmentReporter.generateLwcAssesment(result.lwcAssessmentInfos, instanceUrl, orgDetails)
     //   );
     // }
-    
-    const nameUrls = [
-      {
-        name: 'omnscript assessment report',
-        location: 'omniscript_assessment.html',
-      },
-      {
-        name: 'flexcard assessment report',
-        location: 'flexcard_assessment.html',
-      },
-      {
-        name: 'Integration Procedure assessment report',
-        location: 'integration_procedure_assessment.html',
-      },
-      {
-        name: 'DataMapper assessment report',
-        location: 'datamapper_assessment.html',
-      },
-      {
-        name: 'Apex assessment report',
-        location: 'apex_assessment.html',
-      },
-      // TODO: Uncomment code once MVP for migration is completed
-      // {
-      //   name: 'LWC assessment report',
-      //   location: 'lwc_assessment.html',
-      // },
-    ];
 
-    await this.createMasterDocument(nameUrls, basePath);
-    pushAssestUtilites('javascripts', basePath);
-    pushAssestUtilites('styles', basePath);
+    // await this.createMasterDocument(nameUrls, basePath);
+    this.createDashboard(this.basePath, result, omnistudioOrgDetails);
+    pushAssestUtilites('javascripts', this.basePath);
+    pushAssestUtilites('styles', this.basePath);
+    await open('file://' + this.dashboardFilePath);
   }
-
-  private static formattedOrgDetails(orgDetails: OmnistudioOrgDetails): ReportHeaderFormat[] {
-    return [
-      {
-        key: 'Org Name',
-        value: orgDetails.orgDetails.Name,
-      },
-      {
-        key: 'Org Id',
-        value: orgDetails.orgDetails.Id,
-      },
-      {
-        key: 'Package Name',
-        value: orgDetails.packageDetails.namespace,
-      },
-      {
-        key: 'Data Model',
-        value: orgDetails.dataModel,
-      },
-      {
-        key: 'Assessment Date and Time',
-        value: new Date() as unknown as string,
-      },
-    ];
+  private static createDashboard(
+    basePath: string,
+    result: AssessmentInfo,
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): void {
+    const dashboardTemplate = fs.readFileSync(this.dashboardTemplate, 'utf8');
+    this.createDocument(
+      basePath + '/dashboard.html',
+      TemplateParser.generate(dashboardTemplate, this.createDashboardParam(result, omnistudioOrgDetails))
+    );
   }
-
-  private static async createMasterDocument(reports: nameLocation[], basePath: string): Promise<void> {
-    let listBody = '';
-    for (const report of reports) {
-      listBody += ` <li class="slds-list__item" >
-                <a href="${report.location}" class="slds-text-link" > ${report.name} </a>
-                    </li>`;
-    }
-    const body = `
-                        <!DOCTYPE html>
-                        <html lang="en">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.17.5/styles/salesforce-lightning-design-system.min.css">
-                            <title>SLDS Bulleted List</title>
-                        </head>
-                        <body>
-                            <div class="slds-p-around_medium">
-                                <h1 class="slds-text-heading_medium">Assessment Reports</h1>                                
-                                <ul class="slds-list_vertical slds-has-dividers_left-space">
-                                    ${listBody}
-                                </ul>
-                            </div>
-                        </body>
-                        </html>
-                    `;
-    const fileUrl = basePath + '/assessmentresults.html';
-
-    fs.writeFileSync(fileUrl, body);
-    await open('file://' + fileUrl);
+  private static createDashboardParam(
+    result: AssessmentInfo,
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): DashboardParam {
+    return {
+      title: 'Assessment Reports',
+      heading: 'Assessment Reports',
+      org: getOrgDetailsForReport(omnistudioOrgDetails),
+      assessmentDate: new Date().toISOString(),
+      summaryItems: [
+        {
+          name: 'OmniScript',
+          total: result.omniAssessmentInfo.osAssessmentInfos.length,
+          data: OSAssessmentReporter.getSummaryData(result.omniAssessmentInfo.osAssessmentInfos),
+          file: this.omniscriptAssessmentFilePath,
+        },
+        {
+          name: 'Flexcard',
+          total: result.flexCardAssessmentInfos.length,
+          data: FlexcardAssessmentReporter.getSummaryData(result.flexCardAssessmentInfos),
+          file: this.flexcardAssessmentFilePath,
+        },
+        {
+          name: 'Integration Procedure',
+          total: result.omniAssessmentInfo.ipAssessmentInfos.length,
+          data: IPAssessmentReporter.getSummaryData(result.omniAssessmentInfo.ipAssessmentInfos),
+          file: this.integrationProcedureAssessmentFilePath,
+        },
+        {
+          name: 'DataMapper',
+          total: result.dataRaptorAssessmentInfos.length,
+          data: DRAssessmentReporter.getSummaryData(result.dataRaptorAssessmentInfos),
+          file: this.dataMapperAssessmentFilePath,
+        },
+        {
+          name: 'Apex',
+          total: result.apexAssessmentInfos.length,
+          data: ApexAssessmentReporter.getSummaryData(result.apexAssessmentInfos),
+          file: this.apexAssessmentFilePath,
+        },
+      ],
+    };
   }
 
   private static createDocument(filePath: string, htmlBody: string): void {
-    const doc = this.generateDocument(htmlBody);
-    fs.writeFileSync(filePath, doc);
+    fs.writeFileSync(filePath, htmlBody);
   }
-
-  private static generateDocument(resultsAsHtml: string): string {
-    const document = `
-        <html>
-            <head>
-                <title>OmniStudio Migration Assessment</title>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/design-system/2.17.5/styles/salesforce-lightning-design-system.min.css" />
-            </head>
-            <body>
-            <div style="margin: 20px;">
-                    ${resultsAsHtml}
-                </div>
-            </div>
-            </body>
-        </html>
-        `;
-    return document;
-  }
-
 }

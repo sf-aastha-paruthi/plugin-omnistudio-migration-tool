@@ -1,215 +1,221 @@
 import { OSAssessmentInfo } from '../interfaces';
-import { generateHtmlTable } from '../reportGenerator/reportGenerator';
+import { OmnistudioOrgDetails } from '../orgUtils';
 import {
-  CTASummary,
-  Filter,
-  HeaderColumn,
-  ReportFrameworkParameters,
-  ReportHeaderFormat,
-  TableColumn,
+  FilterGroupParam,
+  ReportHeaderGroupParam,
+  ReportParam,
+  ReportRowParam,
+  SummaryItemDetailParam,
 } from '../reportGenerator/reportInterfaces';
-import { reportingHelper } from './reportingHelper';
+import { createFilterGroupParam, createRowDataParam, getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 
 export class OSAssessmentReporter {
-  public static generateOSAssesment(
-    osAssessmentInfos: OSAssessmentInfo[],
+  private static rowId = 0;
+  private static rowIdPrefix = 'os-row-data-';
+  public static getOmniscriptAssessmentData(
+    OSAssessmentInfos: OSAssessmentInfo[],
     instanceUrl: string,
-    orgDetails: ReportHeaderFormat[],
-    rollbackFlags: string[]
-  ): string {
-    // Header Column
-    const headerColumn: HeaderColumn[] = [
-      {
-        label: 'In Package',
-        colspan: 2,
-        styles: 'color: purple;',
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'oldName',
-          },
-          {
-            label: 'Record ID',
-            key: 'id',
-          },
-        ],
-      },
-      {
-        label: 'In Core',
-        colspan: 1,
-        subColumn: [
-          {
-            label: 'Name',
-            key: 'name',
-          },
-        ],
-      },
-      {
-        label: 'Type',
-        key: 'type',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Assessment Status',
-        key: 'assessmentStatus',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Summary',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Omniscript Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Integration Procedures Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Data Mapper Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Remote Action Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-      {
-        label: 'Custom LWCs Dependencies',
-        rowspan: 2,
-        subColumn: [],
-      },
-    ];
-
-    // Define columns
-    const columns: Array<TableColumn<OSAssessmentInfo>> = [
-      {
-        key: 'oldName',
-        cell: (row: OSAssessmentInfo): string => row.oldName,
-        filterValue: (row: OSAssessmentInfo): string => row.oldName,
-        title: (row: OSAssessmentInfo): string => row.oldName,
-        icon: (row: OSAssessmentInfo): string => this.getIconOnRow(row.migrationStatus),
-      },
-      {
-        key: 'id',
-        cell: (row: OSAssessmentInfo): string => (row.id ? `<a href="${instanceUrl}/${row.id}">${row.id}</a>` : ''),
-        filterValue: (row: OSAssessmentInfo): string => row.id,
-        title: (row: OSAssessmentInfo): string => row.id,
-      },
-      {
-        key: 'name',
-        cell: (row: OSAssessmentInfo): string => row.name || '',
-        filterValue: (row: OSAssessmentInfo): string => row.name,
-        title: (row: OSAssessmentInfo): string => row.name,
-      },
-      {
-        key: 'type',
-        cell: (row: OSAssessmentInfo): string => row.type,
-        filterValue: (row: OSAssessmentInfo): string => row.type,
-        title: (row: OSAssessmentInfo): string => row.type,
-      },
-      {
-        key: 'assessmentStatus',
-        cell: (row: OSAssessmentInfo): string => row.migrationStatus,
-        filterValue: (row: OSAssessmentInfo): string => row.migrationStatus,
-        styles: (row: OSAssessmentInfo): string => this.getMigrationStatusStyles(row.migrationStatus),
-      },
-      {
-        key: 'Summary',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.convertToBuletedList(row.warnings || []),
-        filterValue: (row: OSAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-        title: (row: OSAssessmentInfo): string => (row.warnings ? row.warnings.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesOS',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.decorate(row.dependenciesOS) || '',
-        filterValue: (row: OSAssessmentInfo): string => (row.dependenciesOS ? row.dependenciesOS.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesIP',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.decorate(row.dependenciesIP) || '',
-        filterValue: (row: OSAssessmentInfo): string => (row.dependenciesIP ? row.dependenciesIP.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesDR',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.decorate(row.dependenciesDR) || '',
-        filterValue: (row: OSAssessmentInfo): string => (row.dependenciesDR ? row.dependenciesDR.join(', ') : ''),
-      },
-      {
-        key: 'dependenciesRemoteAction',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.decorate(row.dependenciesRemoteAction) || '',
-        filterValue: (row: OSAssessmentInfo): string =>
-          row.dependenciesRemoteAction ? row.dependenciesRemoteAction.join(', ') : '',
-      },
-      {
-        key: 'dependenciesLWC',
-        cell: (row: OSAssessmentInfo): string => reportingHelper.decorate(row.dependenciesLWC) || '',
-        filterValue: (row: OSAssessmentInfo): string => (row.dependenciesLWC ? row.dependenciesLWC.join(', ') : ''),
-      },
-    ];
-
-    const filters: Filter[] = [
-      {
-        label: 'Type',
-        filterOptions: Array.from(new Set(osAssessmentInfos.map((row: OSAssessmentInfo) => row.type))),
-        key: 'type',
-      },
-      {
-        label: 'Assessment Status',
-        filterOptions: Array.from(new Set(osAssessmentInfos.map((row: OSAssessmentInfo) => row.migrationStatus))),
-        key: 'assessmentStatus',
-      },
-    ];
-
-    const ctaSummary: CTASummary[] = [
-      {
-        name: 'Angular Omniscripts',
-        message: 'converts to LWC omniscripts',
-        link: 'https://google.com',
-      },
-      {
-        name: 'Duplicate Name',
-        message: 'rename the OS prior to running migration',
-        link: 'https://google.com',
-      },
-    ];
-
-    const reportFrameworkParameters: ReportFrameworkParameters<OSAssessmentInfo> = {
-      headerColumns: headerColumn,
-      columns,
-      rows: osAssessmentInfos,
-      orgDetails,
-      filters,
-      ctaSummary,
-      reportHeaderLabel: 'Omniscript Assessment',
-      showMigrationBanner: true,
-      rollbackFlags,
-      rollbackFlagName: 'RollbackOSChanges',
-      commandType: 'assess',
+    omnistudioOrgDetails: OmnistudioOrgDetails
+  ): ReportParam {
+    return {
+      title: 'OmniScript Migration Assessment',
+      heading: 'OmniScript',
+      org: getOrgDetailsForReport(omnistudioOrgDetails),
+      assessmentDate: new Date().toString(),
+      total: OSAssessmentInfos?.length || 0,
+      filterGroups: this.getFilterGroupsForReport(),
+      headerGroups: this.getHeaderGroupsForReport(),
+      rows: this.getRowsForReport(OSAssessmentInfos, instanceUrl),
+      rollbackFlags: (omnistudioOrgDetails.rollbackFlags || []).includes('RollbackOSChanges')
+        ? ['RollbackOSChanges']
+        : undefined,
     };
-
-    // Render table
-    const tableHtml = generateHtmlTable(reportFrameworkParameters);
-    return `${tableHtml}`;
   }
 
-  private static getMigrationStatusStyles(assessmentStatus: string): string {
-    return assessmentStatus === 'Can be Automated' ? 'color:green; font-weight:500;' : 'color:red; font-weight:500;';
+  public static getSummaryData(osAssessmentInfos: OSAssessmentInfo[]): SummaryItemDetailParam[] {
+    return [
+      {
+        name: 'Can be Automated',
+        count: osAssessmentInfos.filter((osAssessmentInfo) => osAssessmentInfo.migrationStatus === 'Can be Automated')
+          .length,
+        cssClass: 'text-success',
+      },
+      {
+        name: 'Need Manual Intervention',
+        count: osAssessmentInfos.filter(
+          (osAssessmentInfo) => osAssessmentInfo.migrationStatus === 'Need Manual Intervention'
+        ).length,
+        cssClass: 'text-warning',
+      },
+      {
+        name: 'Error',
+        count: osAssessmentInfos.filter(
+          (osAssessmentInfo) =>
+            osAssessmentInfo.migrationStatus !== 'Can be Automated' &&
+            osAssessmentInfo.migrationStatus !== 'Need Manual Intervention'
+        ).length,
+        cssClass: 'text-error',
+      },
+    ];
   }
 
-  private static getIconOnRow(assessmentStatus: string): string {
-    return assessmentStatus === 'Need Manual Intervention'
-      ? `<span class='row-'><svg width='16' height='16' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <circle cx='50' cy='50' r='45' stroke='red' stroke-width='10' fill='none'/>
-      <line x1='25' y1='75' x2='75' y2='25' stroke='red' stroke-width='10'/>
-    </svg></span>`
-      : '';
+  private static getRowsForReport(OSAssessmentInfos: OSAssessmentInfo[], instanceUrl: string): ReportRowParam[] {
+    return OSAssessmentInfos.map((info) => ({
+      rowId: `${this.rowIdPrefix}${this.rowId++}`,
+      data: [
+        createRowDataParam('name', info.oldName, true, 1, 1, false),
+        createRowDataParam('recordId', info.id, false, 1, 1, true, `${instanceUrl}/${info.id}`),
+        createRowDataParam('newName', info.name || '', false, 1, 1, false),
+        createRowDataParam('type', info.type, false, 1, 1, false),
+        createRowDataParam('status', info.migrationStatus, false, 1, 1, false),
+        createRowDataParam(
+          'summary',
+          info.infos ? info.infos.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.infos
+        ),
+        createRowDataParam(
+          'omniScriptDependencies',
+          info.dependenciesOS ? info.dependenciesOS.map((dependency) => dependency.name).join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.dependenciesOS.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'integrationProcedureDependencies',
+          info.dependenciesIP ? info.dependenciesIP.map((dependency) => dependency.name).join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.dependenciesIP.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'dataMapperDependencies',
+          info.dependenciesDR ? info.dependenciesDR.map((dependency) => dependency.name).join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.dependenciesDR.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'remoteActionDependencies',
+          info.dependenciesRemoteAction
+            ? info.dependenciesRemoteAction.map((dependency) => dependency.name).join(', ')
+            : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.dependenciesRemoteAction.map((dependency) => dependency.name)
+        ),
+        createRowDataParam(
+          'customLWCDependencies',
+          info.dependenciesLWC ? info.dependenciesLWC.map((dependency) => dependency.name).join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          info.dependenciesLWC.map((dependency) => dependency.name)
+        ),
+      ],
+    }));
+  }
+
+  private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
+    return [
+      {
+        header: [
+          {
+            name: 'In Package',
+            colspan: 2,
+            rowspan: 1,
+          },
+          {
+            name: 'In Core',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Type',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Assessment Status',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Summary',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'OmniScript Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Integration Procedure Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Data Mapper Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Remote action Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+          {
+            name: 'Custom LWCs Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
+        ],
+      },
+      {
+        header: [
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Record ID',
+            colspan: 1,
+            rowspan: 1,
+          },
+          {
+            name: 'Name',
+            colspan: 1,
+            rowspan: 1,
+          },
+        ],
+      },
+    ];
+  }
+
+  private static getFilterGroupsForReport(): FilterGroupParam[] {
+    return [
+      createFilterGroupParam('Filter By Type', 'type', ['LWC', 'Angular']),
+      createFilterGroupParam('Filter By Assessment Status', 'status', ['Can be Automated', 'Need Manual Intervention']),
+    ];
   }
 }
