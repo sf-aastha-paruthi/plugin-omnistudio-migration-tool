@@ -90,5 +90,6 @@
   "omniScriptNameChangeMessage": "OmniScript reference part {0} will be changed to {1} during migration.",
   "dataRaptorNameChangeMessage": "DataRaptor reference {0} will be changed to {1} during migration.",
   "integrationProcedureNameChangeMessage": "Integration Procedure reference {0} will be changed to {1} during migration.",
-  "integrationProcedureManualUpdateMessage": "Integration Procedure reference {0} may need manual updates after migration."
+  "integrationProcedureManualUpdateMessage": "Integration Procedure reference {0} may need manual updates after migration.",
+  "duplicateCardNameMessage": "Potential duplicate: Another card has the same name {0} after name cleaning. This may cause conflicts during migration"
 }

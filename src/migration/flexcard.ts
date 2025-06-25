@@ -129,6 +129,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         dependenciesIP: [],
         dependenciesDR: [],
         dependenciesOS: [],
+        dependenciesFC: [],
         dependenciesLWC: [],
         infos: [],
         warnings: [],
@@ -240,10 +241,27 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           }
         }
       }
+
+      let childCards = this.readChildCardsFromDefinition(flexCard);
+      flexCardAssessmentInfo.dependenciesFC.push(childCards);
     } catch (err) {
       // Log the error but continue processing
       Logger.error(`Error parsing definition for card ${flexCard.Name}: ${err.message}`);
     }
+  }
+
+  private readChildCardsFromDefinition(card: AnyJson): string[] {
+    let childs = [];
+
+    const definition = JSON.parse(card[this.namespacePrefix + 'Definition__c']);
+    if (!definition) return childs;
+
+    for (let state of definition.states || []) {
+      if (state.childCards && Array.isArray(state.childCards)) {
+        childs = childs.concat(state.childCards);
+      }
+    }
+    return childs;
   }
 
   private checkComponentForDependencies(component: any, flexCardAssessmentInfo: FlexCardAssessmentInfo): void {

@@ -77,6 +77,11 @@ export class FlexcardAssessmentReporter {
             colspan: 1,
             rowspan: 2,
           },
+          {
+            name: 'Flexcard Dependencies',
+            colspan: 1,
+            rowspan: 2,
+          },
         ],
       },
       {
@@ -151,6 +156,16 @@ export class FlexcardAssessmentReporter {
           false,
           undefined,
           flexCardAssessmentInfo.dependenciesDR
+        ),
+        createRowDataParam(
+          'flexcardDependencies',
+          flexCardAssessmentInfo.dependenciesFC ? flexCardAssessmentInfo.dependenciesFC.join(', ') : '',
+          false,
+          1,
+          1,
+          false,
+          undefined,
+          flexCardAssessmentInfo.dependenciesFC
         ),
       ],
     }));
