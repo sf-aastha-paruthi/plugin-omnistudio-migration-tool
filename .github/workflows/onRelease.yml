@@ -26,7 +26,7 @@ jobs:
         id: distTag
 
   npm:
-    uses: salesforcecli/github-workflows/.github/workflows/npmPublish.yml@main
+    uses: ./.github/workflows/npmPublish.yml
     needs: [getDistTag]
     with:
       ctc: true
