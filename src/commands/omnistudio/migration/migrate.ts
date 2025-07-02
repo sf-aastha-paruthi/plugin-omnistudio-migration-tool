@@ -11,6 +11,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { flags } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
+import { ExecuteAnonymousResult } from 'jsforce';
 import OmniStudioBaseCommand from '../../basecommand';
 import { DataRaptorMigrationTool } from '../../../migration/dataraptor';
 import { DebugTimer, MigratedObject, MigratedRecordInfo } from '../../../utils';
@@ -180,18 +181,7 @@ export default class Migrate extends OmniStudioBaseCommand {
       relatedObjectMigrationResult.lwcAssessmentInfos
     );
 
-    const apexCode = `
-        ${namespace}.OmniStudioPostInstallClass.useStandardDataModel();
-        System.debug('Hello');
-      `;
-
-    Logger.log('Printing the apexCode ' + apexCode);
-    const result = await conn.tooling.executeAnonymous(apexCode);
-    Logger.log(JSON.stringify(result));
-
-    const result2 = await AnonymousApexRunner.run(this.org, apexCode);
-    Logger.log('Printing result 2');
-    Logger.log(JSON.stringify(result2));
+    await this.setDesignersToUseStandardDataModel(namespace);
 
     await ResultsBuilder.generateReport(
       objectMigrationResults,
@@ -206,6 +196,24 @@ export default class Migrate extends OmniStudioBaseCommand {
 
     // Return results needed for --json flag
     return { objectMigrationResults };
+  }
+
+  private async setDesignersToUseStandardDataModel(namespace: string): Promise<void> {
+    try {
+      Logger.logVerbose('Setting designers to use the standard data model');
+      const apexCode = `
+          ${namespace}.OmniStudioPostInstallClass.useStandardDataModel();
+        `;
+
+      const result: ExecuteAnonymousResult = await AnonymousApexRunner.run(this.org, apexCode);
+
+      if (result?.success === false) {
+        const message = result?.exceptionMessage;
+        Logger.error('Error occurred while setting designers to use the standard data model' + message);
+      }
+    } catch (ex) {
+      Logger.error('Exception occurred while setting designers to use the standard data model' + JSON.stringify(ex));
+    }
   }
 
   private async truncateObjects(migrationObjects: MigrationTool[], debugTimer: DebugTimer): Promise<MigratedObject[]> {
