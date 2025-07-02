@@ -24,6 +24,7 @@ import { generatePackageXml } from '../../../utils/generatePackageXml';
 import { OmnistudioOrgDetails, OrgUtils } from '../../../utils/orgUtils';
 import { Constants } from '../../../utils/constants/stringContants';
 import { OrgPreferences } from '../../../utils/orgPreferences';
+import { AnonymousApexRunner } from '../../../utils/apex/executor/AnonymousApexRunner';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -178,6 +179,19 @@ export default class Migrate extends OmniStudioBaseCommand {
       relatedObjectMigrationResult.apexAssessmentInfos,
       relatedObjectMigrationResult.lwcAssessmentInfos
     );
+
+    const apexCode = `
+        ${namespace}.OmniStudioPostInstallClass.useStandardDataModel();
+        System.debug('Hello');
+      `;
+
+    Logger.log('Printing the apexCode ' + apexCode);
+    const result = await conn.tooling.executeAnonymous(apexCode);
+    Logger.log(JSON.stringify(result));
+
+    const result2 = await AnonymousApexRunner.run(this.org, apexCode);
+    Logger.log('Printing result 2');
+    Logger.log(JSON.stringify(result2));
 
     await ResultsBuilder.generateReport(
       objectMigrationResults,
