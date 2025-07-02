@@ -208,8 +208,10 @@ export default class Migrate extends OmniStudioBaseCommand {
       const result: ExecuteAnonymousResult = await AnonymousApexRunner.run(this.org, apexCode);
 
       if (result?.success === false) {
-        const message = result?.exceptionMessage;
-        Logger.error('Error occurred while setting designers to use the standard data model' + message);
+        const message = result?.exceptionStackTrace;
+        Logger.error('Error occurred while setting designers to use the standard data model ' + message);
+      } else if (result?.success === true) {
+        Logger.logVerbose('Successfully executed setDesignersToUseStandardDataModel');
       }
     } catch (ex) {
       Logger.error('Exception occurred while setting designers to use the standard data model' + JSON.stringify(ex));
