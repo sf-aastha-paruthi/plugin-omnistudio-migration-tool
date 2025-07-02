@@ -84,7 +84,7 @@ export default class Assess extends OmniStudioBaseCommand {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, complexity
   public async runAssess(): Promise<any> {
     DebugTimer.getInstance().start();
     let apiVersion = this.flags.apiversion as string;
