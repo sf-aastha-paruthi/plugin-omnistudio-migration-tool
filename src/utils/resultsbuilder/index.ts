@@ -30,7 +30,8 @@ export class ResultsBuilder {
     relatedObjectMigrationResult: RelatedObjectAssesmentInfo,
     instanceUrl: string,
     orgDetails: OmnistudioOrgDetails,
-    messages: Messages
+    messages: Messages,
+    actionItems: string[]
   ): Promise<void> {
     fs.mkdirSync(resultsDir, { recursive: true });
     Logger.info(messages.getMessage('generatingComponentReports'));
@@ -41,7 +42,7 @@ export class ResultsBuilder {
     this.generateReportForRelatedObject(relatedObjectMigrationResult, instanceUrl, orgDetails, messages);
 
     Logger.info(messages.getMessage('generatingMigrationReportDashboard'));
-    this.generateMigrationReportDashboard(orgDetails, results, relatedObjectMigrationResult, messages);
+    this.generateMigrationReportDashboard(orgDetails, results, relatedObjectMigrationResult, messages, actionItems);
     pushAssestUtilites('javascripts', resultsDir);
     pushAssestUtilites('styles', resultsDir);
     await open(path.join(resultsDir, migrationReportHTMLfileName));
@@ -283,7 +284,8 @@ export class ResultsBuilder {
     orgDetails: OmnistudioOrgDetails,
     results: MigratedObject[],
     relatedObjectMigrationResult: RelatedObjectAssesmentInfo,
-    messages: Messages
+    messages: Messages,
+    actionItems: string[]
   ): void {
     const data = {
       title: 'Migration Report Dashboard',
@@ -309,6 +311,7 @@ export class ResultsBuilder {
           file: apexFileName,
         },
       ],
+      actionItems,
     };
 
     const dashboardTemplate = fs.readFileSync(dashboardTemplateFilePath, 'utf8');
