@@ -5,7 +5,7 @@
 import { Org, Messages } from '@salesforce/core';
 import * as shell from 'shelljs';
 import { ApexAssessmentInfo, DebugTimer, LWCAssessmentInfo, RelatedObjectAssesmentInfo } from '../../utils';
-import { sfProject } from '../../utils/sfcli/project/sfProject';
+// import { sfProject } from '../../utils/sfcli/project/sfProject';
 import { Logger } from '../../utils/logger';
 import { Constants } from '../../utils/constants/stringContants';
 import { ApexMigration } from './ApexMigration';
@@ -17,7 +17,7 @@ const migrateMessages = Messages.loadMessages('@salesforce/plugin-omnistudio-mig
 
 // TODO: Uncomment code once MVP for migration is completed
 // const LWCTYPE = 'LightningComponentBundle';
-const APEXCLASS = 'Apexclass';
+// const APEXCLASS = 'Apexclass';
 
 const defaultProjectName = 'omnistudio_migration';
 export default class OmnistudioRelatedObjectMigrationFacade {
@@ -54,7 +54,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
   }
 
   private createProject(): string {
-    sfProject.create(defaultProjectName);
+    // sfProject.create(defaultProjectName);
     return process.cwd() + '/' + defaultProjectName;
   }
 
@@ -66,9 +66,12 @@ export default class OmnistudioRelatedObjectMigrationFacade {
     //   sfProject.retrieve(LWCTYPE, this.org.getUsername());
     // }
     if (relatedObjects.includes(Constants.Apex)) {
-      sfProject.retrieve(APEXCLASS, this.org.getUsername());
+      Logger.logVerbose('Retreiving apex classes');
+      // sfProject.retrieve(APEXCLASS, this.org.getUsername());
+      Logger.logVerbose('Apex classes retreived');
     }
     shell.cd(pwd);
+    Logger.logVerbose('Retreival completed. Now exiting');
   }
 
   private processRelatedObjects(relatedObjects: string[], isMigration: boolean): RelatedObjectAssesmentInfo {

@@ -487,7 +487,18 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   async migrate(): Promise<MigrationResult[]> {
     // Get All Records from OmniScript__c (IP & OS Parent Records)
-    const omniscripts = await this.getAllOmniScripts();
+    const omniscripts = [];
+
+    // With this code apex classes are coming
+    /*
+    let omniscripts = await this.getAllOmniScripts();
+
+    let filteredOmniscripts = omniscripts.filter(
+      (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('Blitz')
+    );
+    omniscripts = filteredOmniscripts;
+    */
+
     const functionDefinitionMetadata = await getAllFunctionMetadata(this.namespace, this.connection);
     populateRegexForFunctionMetadata(functionDefinitionMetadata);
 
@@ -542,8 +553,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       omniscript[`${this.namespacePrefix}IsActive__c`] = false;
 
       // Get All elements for each OmniScript__c record(i.e IP/OS)
-      const elements = await this.getAllElementsForOmniScript(recordId);
+      const elements = await this.getAllElementsForOmniScript(recordId); // For IP okay, what about Omniscrit and OmniscritDefinition enitity
       if (omniscript[`${this.namespacePrefix}IsProcedure__c`] === true) {
+        // If it is an Integration Procedure
         // do the formula replacement from custom to standard notation
         if (functionDefinitionMetadata.length > 0 && elements.length > 0) {
           for (let ipElement of elements) {
@@ -793,6 +805,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const filters = new Map<string, any>();
     filters.set(this.namespacePrefix + 'OmniScriptId__c', recordId);
 
+    //vlocity_cmt__Element__c
+    // ResponseAction 1 of IP "a33Ow0000000LHNIA2" is coming from here // {"executionConditionalFormula":"","useFormulas":true,"additionalOutput":{"ABC":"ABCValue"},"returnOnlyAdditionalOutput":true,"returnFullDataJSON":false,"responseFormat":"JSON","responseJSONPath":"","responseJSONNode":"","sendJSONPath":"","sendJSONNode":"","responseDefaultData":{},"vlcResponseHeaders":{},"show":null,"label":"ResponseAction1","disOnTplt":false}
     // const queryFilterStr = ` Where ${this.namespacePrefix}OmniScriptId__c = '${omniScriptData.keys().next().value}'`;
     return await QueryTools.queryWithFilter(
       this.connection,
@@ -828,6 +842,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     let exit = false; // Counter variable to exit after all parent-child elements inserted
     var elementsUploadInfo = new Map<string, UploadRecordResult>(); // Info for Uploaded Elements to be returned
 
+    // Example of this is omniscript step having text inside it a21Ow0000000Z7RIAU - ElementId and in Omniscript Definition ParenetElementId
+    // Step has Level=0
+    // Text has Level=1
     do {
       let tempElements = []; // Stores Elements at a same level starting with levelCount = 0 level (parent elements)
       for (let element of elements) {
