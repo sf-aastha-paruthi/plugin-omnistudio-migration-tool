@@ -109,6 +109,13 @@ export default class Migrate extends OmniStudioBaseCommand {
       return;
     }
 
+    try {
+      Logger.logVerbose('ABC Trying to enable the required setting');
+      await OrgPreferences.enableExperienceBundleMetadataAPI(conn);
+    } catch (error) {
+      Logger.logVerbose('ABCD error occurred' + JSON.stringify(error));
+    }
+
     // Enable Omni preferences
     try {
       orgs.rollbackFlags = await OrgPreferences.checkRollbackFlags(conn);

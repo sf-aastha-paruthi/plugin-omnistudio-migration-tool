@@ -152,6 +152,11 @@ export interface OmniStudioSettingsMetadata {
   disableRollbackFlagsPref: boolean;
 }
 
+export interface ExperienceBundleSettingsMetadata {
+  fullName: string;
+  enableExperienceBundleBasedSiteCreation: boolean;
+}
+
 export interface QueryResult {
   DeveloperName: string;
   Value: string;
@@ -165,4 +170,9 @@ export interface QueryResult {
     DeveloperName: string;
     Value: string;
   }>;
+}
+
+export interface ExperienceBundleSettingsMetadata {
+  fullName: string;
+  enableExperienceBundleMetadata: boolean;
 }
