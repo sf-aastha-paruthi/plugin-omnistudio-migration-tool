@@ -43,6 +43,9 @@ export interface UploadRecordResult {
   warnings: string[];
   hasErrors: boolean;
   success?: boolean;
+  type?: string;
+  subtype?: string;
+  language?: string;
 }
 
 export interface MigrationResult {

@@ -176,3 +176,24 @@ export interface ExperienceBundleSettingsMetadata {
   fullName: string;
   enableExperienceBundleMetadata: boolean;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface StorageMap {
+  map: Map<string, Storage>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface Storage {
+  migrationStatus: string;
+}
+
+export interface OmniScriptStorage extends Storage {
+  type: string;
+  subtype: string;
+  language: string;
+}
+
+export interface FCStorage extends Storage {
+  type: string;
+  subtype: string;
+}

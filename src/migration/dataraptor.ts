@@ -18,6 +18,8 @@ import { Logger } from '../utils/logger';
 import { createProgressBar } from './base';
 
 export class DataRaptorMigrationTool extends BaseMigrationTool implements MigrationTool {
+  // private readonly migrationStorage: Map<string, DRStorage> = new Map();
+
   static readonly DRBUNDLE_NAME = 'DRBundle__c';
   static readonly DRMAPITEM_NAME = 'DRMapItem__c';
 
