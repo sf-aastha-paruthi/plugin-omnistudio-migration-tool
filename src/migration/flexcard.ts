@@ -74,8 +74,13 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   // Perform Records Migration from VlocityCard__c to OmniUiCard
   async migrate(): Promise<MigrationResult[]> {
     // Get All the Active VlocityCard__c records
-    // let cards = await this.getAllActiveCards();
-    let cards = [];
+    let cards = await this.getAllActiveCards();
+
+    let filteredCards = cards.filter(
+      (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('ABCChild')
+    );
+    cards = filteredCards;
+
     Logger.log(this.messages.getMessage('foundFlexCardsToMigrate', [cards.length]));
 
     const progressBar = createProgressBar('Migrating', 'Flexcard');
@@ -448,6 +453,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       progressBar.update(++progressCounter);
     }
     progressBar.stop();
+
+    // TODO - See what comes here and see how it is getting generated
 
     return cardsUploadInfo;
   }

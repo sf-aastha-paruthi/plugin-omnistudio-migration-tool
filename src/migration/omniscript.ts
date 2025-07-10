@@ -489,20 +489,13 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   async migrate(): Promise<MigrationResult[]> {
     // Get All Records from OmniScript__c (IP & OS Parent Records)
-    Logger.logVerbose('Fetching all omniscripts');
-    const omniscripts = await this.getAllOmniScripts();
-    Logger.logVerbose('Fetched all omniscripts ' + omniscripts.length);
-
-    /*
-    const omniscripts = [];
+    // const omniscripts = await this.getAllOmniScripts();
 
     let omniscripts = await this.getAllOmniScripts();
-
     let filteredOmniscripts = omniscripts.filter(
-      (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('Blitz')
+      (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('Alpha')
     );
     omniscripts = filteredOmniscripts;
-    */
 
     const functionDefinitionMetadata = await getAllFunctionMetadata(this.namespace, this.connection);
     populateRegexForFunctionMetadata(functionDefinitionMetadata);
@@ -539,6 +532,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         : 'OmniScript';
       if (omniProcessType === 'OmniScript') {
         const type = omniscript[this.namespacePrefix + 'IsLwcEnabled__c'] ? 'LWC' : 'Angular';
+        // Angular being processed
         if (type === 'Angular') {
           // TODO - ADD TO STORAGE
           // Skip Angular OmniScripts and add a warning record
@@ -642,6 +636,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         mappedOmniScript
       );
 
+      // This seems to be the best place
+
+      // IMP - Mapped omniscript has the type subtype language info - THIS CAN BE USED
       if (osUploadResponse.success) {
         // Fix errors
         if (!osUploadResponse.success) {
@@ -665,6 +662,11 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           );
         }
 
+        osUploadResponse.type = mappedOmniScript[OmniScriptMappings.Type__c];
+        osUploadResponse.subtype = mappedOmniScript[OmniScriptMappings.SubType__c];
+        osUploadResponse.langugage = mappedOmniScript[OmniScriptMappings.Language__c];
+
+        // FROM HERE WE ARE USING THE OSUploadResponse
         try {
           // Upload All elements for each OmniScript__c record(i.e IP/OS)
           await this.uploadAllElements(osUploadResponse, elements);
@@ -739,6 +741,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
     const objectMigrationResults: MigrationResult[] = [];
 
+    this.prepareStorage(osUploadInfo, originalOsRecords);
+
     if (this.exportType === OmniScriptExportType.All || this.exportType === OmniScriptExportType.IP) {
       objectMigrationResults.push(
         this.getMigratedRecordsByType('Integration Procedures', osUploadInfo, originalOsRecords)
@@ -749,6 +753,34 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     }
 
     return objectMigrationResults;
+  }
+
+  private prepareStorage(results: Map<string, UploadRecordResult>, records: Map<string, any>) {
+    Logger.logVerbose('Started preparing storage');
+    // let resultMap: Map<string, any> = new Map<string, any>();
+    for (let key of Array.from(records.keys())) {
+      try {
+        let oldrecord = records.get(key);
+        let newrecord = results.get(key);
+
+        let oldType = oldrecord[this.namespacePrefix + 'Type__c'];
+        let oldSubtype = oldrecord[this.namespacePrefix + 'SubType__c'];
+        let oldLanguage = oldrecord[this.namespacePrefix + 'Language__c'];
+
+        // newrecord is undefined. Will need to populate error
+        let newType = newrecord['type'];
+        let newSubtype = newrecord['subtype'];
+        let newLanguage = newrecord['language']; // Coming as undefined - newLanguage for migrated record
+
+        Logger.logVerbose(`Old - ${oldType} ${oldSubtype} ${oldLanguage}`);
+        Logger.logVerbose(`New - ${newType} ${newSubtype} ${newLanguage}`);
+
+        Logger.logVerbose(JSON.stringify(oldrecord));
+        Logger.logVerbose(JSON.stringify(newrecord));
+      } catch (error) {
+        Logger.logVerbose(error);
+      }
+    }
   }
 
   // Using this small method, As IP & OS lives in same object -> So returning the IP and OS in the end, after the migration is done

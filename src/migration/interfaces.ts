@@ -45,7 +45,7 @@ export interface UploadRecordResult {
   success?: boolean;
   type?: string;
   subtype?: string;
-  language?: string;
+  langugage?: string;
 }
 
 export interface MigrationResult {
