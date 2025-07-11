@@ -4,7 +4,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Org, Messages } from '@salesforce/core';
 import * as shell from 'shelljs';
-import { ApexAssessmentInfo, DebugTimer, LWCAssessmentInfo, RelatedObjectAssesmentInfo } from '../../utils';
+import {
+  ApexAssessmentInfo,
+  DebugTimer,
+  ExperienceSiteAssessmentInfo,
+  LWCAssessmentInfo,
+  RelatedObjectAssesmentInfo,
+} from '../../utils';
 import { sfProject } from '../../utils/sfcli/project/sfProject';
 import { Logger } from '../../utils/logger';
 import { Constants } from '../../utils/constants/stringContants';
@@ -100,6 +106,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
 
     let apexAssessmentInfos: ApexAssessmentInfo[] = [];
     const lwcAssessmentInfos: LWCAssessmentInfo[] = [];
+    let experienceSiteAssessmentInfos: ExperienceSiteAssessmentInfo[] = [];
 
     // Proceed with processing logic
     try {
@@ -114,7 +121,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
 
     try {
       Logger.logVerbose('Now moving to experience site migration');
-      this.experienceSiteMigration.migrate();
+      experienceSiteAssessmentInfos = this.experienceSiteMigration.migrate();
     } catch (Error) {
       Logger.logVerbose('Error occurred while processing the experience sites');
     }
@@ -136,7 +143,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
     Logger.debug(timer.toString());
 
     // Return results needed for --json flag
-    return { apexAssessmentInfos, lwcAssessmentInfos };
+    return { apexAssessmentInfos, lwcAssessmentInfos, experienceSiteAssessmentInfos };
   }
 
   public migrateAll(relatedObjects: string[]): RelatedObjectAssesmentInfo {

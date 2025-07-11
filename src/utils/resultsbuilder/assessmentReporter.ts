@@ -80,6 +80,15 @@ export class AssessmentReporter {
         )
       );
 
+      this.createDocument(
+        path.join(this.basePath, this.apexAssessmentFileName),
+        TemplateParser.generate(
+          assessmentReportTemplate,
+          ApexAssessmentReporter.getApexAssessmentData(result.apexAssessmentInfos, omnistudioOrgDetails),
+          messages
+        )
+      );
+
       // this.createDocument(
       //   lwcAssessmentFilePath,
       //   LWCAssessmentReporter.generateLwcAssesment(result.lwcAssessmentInfos, instanceUrl, orgDetails)
@@ -247,7 +256,13 @@ export class AssessmentReporter {
           file: this.flexcardAssessmentFileName,
         },
         {
-          name: 'Apex',
+          name: 'Apex - Alpha',
+          total: result.apexAssessmentInfos.length,
+          data: ApexAssessmentReporter.getSummaryData(result.apexAssessmentInfos),
+          file: this.apexAssessmentFileName,
+        },
+        {
+          name: 'MyApex',
           total: result.apexAssessmentInfos.length,
           data: ApexAssessmentReporter.getSummaryData(result.apexAssessmentInfos),
           file: this.apexAssessmentFileName,

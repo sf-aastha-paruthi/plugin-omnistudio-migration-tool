@@ -187,6 +187,8 @@ export default class Migrate extends OmniStudioBaseCommand {
       targetApexNamespace
     );
     const relatedObjectMigrationResult = omnistudioRelatedObjectsMigration.migrateAll(objectsToProcess);
+
+    // TODO - HERE PACKAGEXML is getting generated
     generatePackageXml.createChangeList(
       relatedObjectMigrationResult.apexAssessmentInfos,
       relatedObjectMigrationResult.lwcAssessmentInfos

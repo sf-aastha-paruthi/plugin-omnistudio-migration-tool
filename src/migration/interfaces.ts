@@ -126,6 +126,8 @@ export interface Component {
   renderPriority?: string;
   renditionMap: any; // Replace with better type if known
   type: string;
+  subtype?: string;
+  language?: string;
 }
 
 export interface ComponentAttributes {

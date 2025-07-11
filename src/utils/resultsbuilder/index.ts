@@ -3,7 +3,13 @@ import path from 'path';
 import open from 'open';
 import { Messages } from '@salesforce/core';
 import { pushAssestUtilites } from '../file/fileUtil';
-import { ApexAssessmentInfo, MigratedObject, MigratedRecordInfo, RelatedObjectAssesmentInfo } from '../interfaces';
+import {
+  ApexAssessmentInfo,
+  ExperienceSiteAssessmentInfo,
+  MigratedObject,
+  MigratedRecordInfo,
+  RelatedObjectAssesmentInfo,
+} from '../interfaces';
 import { ReportParam } from '../reportGenerator/reportInterfaces';
 import { OmnistudioOrgDetails } from '../orgUtils';
 import { TemplateParser } from '../templateParser/generate';
@@ -20,6 +26,7 @@ const dashboardTemplateName = 'dashboard.template';
 const reportTemplateFilePath = path.join(__dirname, '..', '..', templateDir, reportTemplateName);
 const dashboardTemplateFilePath = path.join(__dirname, '..', '..', templateDir, dashboardTemplateName);
 const apexFileName = 'apex.html';
+const experienceSiteFileName = 'experienceSite.html';
 
 export class ResultsBuilder {
   private static rowClass = 'data-row-';
@@ -48,6 +55,7 @@ export class ResultsBuilder {
     await open(path.join(resultsDir, migrationReportHTMLfileName));
   }
 
+  // This file was used for action items
   private static generateReportForResult(
     result: MigratedObject,
     instanceUrl: string,
@@ -178,7 +186,112 @@ export class ResultsBuilder {
     orgDetails: OmnistudioOrgDetails,
     messages: Messages
   ): void {
-    this.generateReportForApex(result.apexAssessmentInfos, instanceUrl, orgDetails, messages);
+    let a = 5;
+    a = 100;
+    if (a === 10) {
+      this.generateReportForApex(result.apexAssessmentInfos, instanceUrl, orgDetails, messages);
+    }
+    this.generateReportForExperienceSites(result.experienceSiteAssessmentInfos, instanceUrl, orgDetails, messages);
+  }
+
+  private static generateReportForExperienceSites(
+    result: ExperienceSiteAssessmentInfo[],
+    instanceUrl: string,
+    orgDetails: OmnistudioOrgDetails,
+    messages: Messages
+  ): void {
+    Logger.captureVerboseData('experience data', result);
+    const data: ReportParam = {
+      title: 'Experience Site',
+      heading: 'Experience Site',
+      org: {
+        name: orgDetails.orgDetails.Name,
+        id: orgDetails.orgDetails.Id,
+        namespace: orgDetails.packageDetails.namespace,
+        dataModel: orgDetails.dataModel,
+      },
+      assessmentDate: new Date().toString(),
+      total: result.length,
+      filterGroups: [createFilterGroupParam('Filter by Errors', 'warnings', ['Has Errors', 'Has No Errors'])],
+      headerGroups: [
+        {
+          header: [
+            {
+              name: 'Class Name',
+              colspan: 1,
+              rowspan: 1,
+            },
+            {
+              name: 'File Reference',
+              colspan: 1,
+              rowspan: 1,
+            },
+            {
+              name: 'Diff',
+              colspan: 1,
+              rowspan: 1,
+            },
+            {
+              name: 'Comments',
+              colspan: 1,
+              rowspan: 1,
+            },
+            {
+              name: 'Errors',
+              colspan: 1,
+              rowspan: 1,
+            },
+          ],
+        },
+      ],
+      rows: result.map((item) => ({
+        rowId: `${this.rowClass}${this.rowId++}`,
+        data: [
+          createRowDataParam('name', item.name, true, 1, 1, false),
+          createRowDataParam('path', item.path, false, 1, 1, false),
+          createRowDataParam(
+            'diff',
+            item.name + 'diff',
+            false,
+            1,
+            1,
+            false,
+            undefined,
+            FileDiffUtil.getDiffHTML(item.diff, item.name)
+          ),
+          createRowDataParam(
+            'infos',
+            item.infos ? item.infos.join(', ') : '',
+            false,
+            1,
+            1,
+            false,
+            undefined,
+            item.infos
+          ),
+          createRowDataParam(
+            'warnings',
+            item.warnings ? 'Has Errors' : 'Has No Errors',
+            false,
+            1,
+            1,
+            false,
+            undefined,
+            item.warnings
+          ),
+        ],
+      })),
+      rollbackFlags: (orgDetails.rollbackFlags || []).includes('RollbackApexChanges')
+        ? ['RollbackApexChanges']
+        : undefined,
+    };
+
+    const reportTemplate = fs.readFileSync(reportTemplateFilePath, 'utf8');
+    const html = TemplateParser.generate(reportTemplate, data, messages);
+    Logger.logVerbose('Generating experience site file ' + experienceSiteFileName);
+    fs.writeFileSync(path.join(resultsDir, experienceSiteFileName), html);
+
+    // call generate html from template
   }
 
   private static generateReportForApex(
@@ -288,8 +401,8 @@ export class ResultsBuilder {
     actionItems: string[]
   ): void {
     const data = {
-      title: 'Migration Report Dashboard',
-      heading: 'Migration Report Dashboard',
+      title: 'Migration Report Dashboard - ZETA',
+      heading: 'Migration Report Dashboard - ZETA',
       org: {
         name: orgDetails.orgDetails.Name,
         id: orgDetails.orgDetails.Id,
@@ -305,10 +418,16 @@ export class ResultsBuilder {
           file: result.name.replace(/ /g, '_').replace(/\//g, '_') + '.html',
         })),
         {
-          name: 'Apex Classes',
+          name: 'Apex Classes RONALDO',
           total: relatedObjectMigrationResult.apexAssessmentInfos?.length || 0,
           data: this.getDifferentStatusDataForApex(relatedObjectMigrationResult.apexAssessmentInfos),
           file: apexFileName,
+        },
+        {
+          name: 'Apex Classes MESSI',
+          total: relatedObjectMigrationResult.experienceSiteAssessmentInfos?.length || 0,
+          data: this.getDifferentStatusDataForApex(relatedObjectMigrationResult.experienceSiteAssessmentInfos),
+          file: experienceSiteFileName,
         },
       ],
       actionItems,

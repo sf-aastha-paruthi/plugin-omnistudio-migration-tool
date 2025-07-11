@@ -6,6 +6,8 @@ import { FileUtil, File } from '../../utils/file/fileUtil';
 import { Logger } from '../../utils/logger';
 import { Constants } from '../../utils/constants/stringContants';
 import { PageJson, Region } from '../interfaces';
+import { FileDiffUtil } from '../../utils/lwcparser/fileutils/FileDiffUtil';
+import { ExperienceSiteAssessmentInfo } from '../../utils';
 import { BaseRelatedObjectMigration } from './BaseRealtedObjectMigration';
 
 Messages.importMessagesDirectory(__dirname);
@@ -13,15 +15,18 @@ Messages.importMessagesDirectory(__dirname);
 const EXPERIENCE_SITES_PATH = '/force-app/main/default/experiences/selfservicepolicyholder1';
 
 export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
-  public constructor(projectPath: string, namespace: string, org: Org, targetApexNameSpace?: string) {
+  private targetNamespace: string;
+
+  public constructor(projectPath: string, namespace: string, org: Org, targetNameSpace?: string) {
     super(projectPath, namespace, org);
+    this.targetNamespace = targetNameSpace;
   }
 
   public processObjectType(): string {
     return Constants.Apex;
   }
 
-  public migrate(): void {
+  public migrate(): ExperienceSiteAssessmentInfo[] {
     Logger.logVerbose('StartingExperienceSiteMigration');
     const pwd = shell.pwd();
     Logger.logVerbose('A');
@@ -35,16 +40,18 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
 
     Logger.logVerbose('Successfully retreived the experience site metadata. Now starting processing the sites');
 
-    this.processExperienceSites(this.projectPath, 'migration');
+    const experienceSiteInfo = this.processExperienceSites(this.projectPath, 'migration');
     Logger.info('successfullyProcessed Experience Sites for Migration');
     shell.cd(pwd);
+    return experienceSiteInfo;
   }
 
-  public processExperienceSites(dir: string, type = 'migration'): void {
+  public processExperienceSites(dir: string, type = 'migration'): ExperienceSiteAssessmentInfo[] {
     dir += EXPERIENCE_SITES_PATH;
     const directoryMap: Map<string, File[]> = FileUtil.readAllFiles(dir);
 
     // TODO - Can do chunking here later, so as to minimize the memory usage
+    const experienceSiteAssessmentInfo: ExperienceSiteAssessmentInfo[] = [];
     for (const directory of directoryMap.keys()) {
       const fileArray = directoryMap.get(directory);
 
@@ -57,8 +64,9 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
         }
         try {
           Logger.logVerbose('Started processing the file - ' + file.name);
-          this.processExperienceSite(file, type);
+          const experienceSiteInfo = this.processExperienceSite(file, type);
 
+          experienceSiteAssessmentInfo.push(experienceSiteInfo);
           // TODO - Later fileAssessmentInfo.push(apexAssementInfo);
           Logger.logVerbose('successfullyProcessedExperienceSite');
         } catch (err) {
@@ -71,9 +79,10 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
         Logger.logVerbose('successfullyProcessedExperienceSite');
       }
     }
+    return experienceSiteAssessmentInfo;
   }
 
-  public processExperienceSite(file: File, type = 'migration'): void {
+  public processExperienceSite(file: File, type = 'migration'): ExperienceSiteAssessmentInfo {
     // Here we are reading the file. Before only the metadata is being fetchedl
     if (file.name === 'lwcos') {
       const fileContent = fs.readFileSync(file.location, 'utf8');
@@ -81,6 +90,8 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
       Logger.logVerbose(JSON.stringify(fileContent));
 
       const abc = JSON.parse(fileContent) as PageJson; // Later covert to a wrapper so that later can change easily with 3rd party if required
+      const normalizedOriginal = JSON.stringify(abc, null, 2);
+
       Logger.logVerbose('Printing the parsed content');
       Logger.logVerbose(JSON.stringify(abc));
 
@@ -98,30 +109,54 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
           for (const component of regionComponents) {
             Logger.logVerbose('----Now printing the components----');
             Logger.logVerbose('Printing the component ' + JSON.stringify(component));
+
+            // TODO - Replace with namespace - targetNamespace
+            Logger.logVerbose('The target namespace is ' + this.targetNamespace);
+            if (component?.componentName === 'vlocity_ins:vlocityLWCOmniWrapper') {
+              Logger.logVerbose('EUREKA - Component has been found -------------- EUREKA');
+              component.componentName = 'KAPOOR';
+
+              component.type = 'ABC';
+              component.subtype = 'DEF';
+              component.language = 'GHI';
+            }
           }
         }
+
+        // In each region take the object having components key. This value of that will be an object array lets call it RegionComponents
+        // For each RegionComponents, iterate over all the components and replace the keys with hardcoded values.
       }
 
-      // In each region take the object having components key. This value of that will be an object array lets call it RegionComponents
-      // For each RegionComponents, iterate over all the components and replace the keys with hardcoded values.
+      Logger.logVerbose('Now printing the updated object' + JSON.stringify(abc));
 
-      // Here our json parser will come
-      // TODO
-      /*
-      let difference = [];
-      difference = new FileDiffUtil().getFileDiff(file.name, fileContent, updatedContent);
-      */
-      /*
+      const noarmalizeUpdatedFileContent = JSON.stringify(abc, null, 2); // Pretty-print with 2 spaces
+      const difference = new FileDiffUtil().getFileDiff(file.name, normalizedOriginal, noarmalizeUpdatedFileContent);
+
+      Logger.logVerbose('Printing the difference' + JSON.stringify(difference));
+
+      if (normalizedOriginal !== noarmalizeUpdatedFileContent) {
+        Logger.logVerbose('Updating the file content');
+        fs.writeFileSync(file.location, noarmalizeUpdatedFileContent, 'utf8');
+      }
+
+      const warningMessage: string[] = [];
+      const updateMessage: string[] = [];
       return {
         name: file.name,
         warnings: warningMessage,
-        infos: updateMessages,
+        infos: updateMessage,
         path: file.location,
         diff: JSON.stringify(difference),
       };
-      */
     } else {
       Logger.logVerbose('File name is ' + file.name);
+      return {
+        name: file.name,
+        warnings: [],
+        infos: [],
+        path: file.location,
+        diff: '[]',
+      };
     }
   }
 }

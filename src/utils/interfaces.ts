@@ -89,6 +89,7 @@ export interface AssessmentInfo {
 export interface RelatedObjectAssesmentInfo {
   apexAssessmentInfos: ApexAssessmentInfo[];
   lwcAssessmentInfos: LWCAssessmentInfo[];
+  experienceSiteAssessmentInfos: ExperienceSiteAssessmentInfo[];
 }
 export interface FlexCardAssessmentInfo {
   name: string;
@@ -124,6 +125,11 @@ export interface FileChangeInfo {
   diff: string;
 }
 export interface ApexAssessmentInfo extends FileChangeInfo {
+  warnings: string[];
+  infos: string[];
+}
+
+export interface ExperienceSiteAssessmentInfo extends FileChangeInfo {
   warnings: string[];
   infos: string[];
 }
