@@ -9,6 +9,7 @@ import { sfProject } from '../../utils/sfcli/project/sfProject';
 import { Logger } from '../../utils/logger';
 import { Constants } from '../../utils/constants/stringContants';
 import { ApexMigration } from './ApexMigration';
+import { ExperienceSiteMigration } from './ExperienceSiteMigration';
 import { LwcMigration } from './LwcMigration';
 
 Messages.importMessagesDirectory(__dirname);
@@ -33,6 +34,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
   protected readonly projectPath: string;
   protected readonly apexMigration: ApexMigration;
   protected readonly lwcMigration: LwcMigration;
+  protected readonly experienceSiteMigration: ExperienceSiteMigration;
 
   public constructor(
     namespace: string,
@@ -50,12 +52,14 @@ export default class OmnistudioRelatedObjectMigrationFacade {
 
     // Initialize migration instances
     this.apexMigration = new ApexMigration(this.projectPath, this.namespace, this.org, targetApexNamespace);
+    this.experienceSiteMigration = new ExperienceSiteMigration(this.projectPath, this.namespace, this.org);
+
     // TODO: Uncomment code once MVP for migration is completed
     // this.lwcMigration = new LwcMigration(this.projectPath, this.namespace, this.org);
   }
 
   private createProject(): string {
-    // sfProject.create(defaultProjectName);
+    sfProject.create(defaultProjectName);
     return process.cwd() + '/' + defaultProjectName;
   }
 
@@ -107,6 +111,14 @@ export default class OmnistudioRelatedObjectMigrationFacade {
       Logger.error(JSON.stringify(Error));
       Logger.error(Error.stack);
     }
+
+    try {
+      Logger.logVerbose('Now moving to experience site migration');
+      this.experienceSiteMigration.migrate();
+    } catch (Error) {
+      Logger.logVerbose('Error occurred while processing the experience sites');
+    }
+
     // TODO: Uncomment code once MVP for migration is completed
     // try {
     //   if (relatedObjects.includes(Constants.LWC)) {
