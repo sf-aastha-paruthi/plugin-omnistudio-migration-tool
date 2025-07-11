@@ -65,12 +65,17 @@ export class ApexASTParser {
   }
 
   public parse(): CompilationUnitContext {
-    const lexer = new ApexLexer(new CaseInsensitiveInputStream(CharStreams.fromString(this.apexFileContent)));
-    const tokens = new CommonTokenStream(lexer);
-    const parser = new ApexParser(tokens);
-    const context = parser.compilationUnit();
-    //  parser.addParseListener(new interfaceVisitor() as ApexParserListener);
-    ParseTreeWalker.DEFAULT.walk(this.astListener, context);
+    const lexer = new ApexLexer(new CaseInsensitiveInputStream(CharStreams.fromString(this.apexFileContent))); // Lexer breaks your code into tokens
+    const tokens = new CommonTokenStream(lexer); // Maps lex to tokens
+    const parser = new ApexParser(tokens); // Parser applies grammer rules to these tokens and builds a parse tree
+    // In the parse tree, each node corresponds to rule of grammar and leaf nodes are the actual tokens
+
+    const context = parser.compilationUnit(); // CompliationUnitContext represents the parsed source code
+    // Root node of the parsed tree - CompilationUnitContext
+
+    // MERI NAHI HAE YE LINE parser.addParseListener(new interfaceVisitor() as ApexParserListener);
+
+    ParseTreeWalker.DEFAULT.walk(this.astListener, context); // Now you can walk the tree using parseTreeWalker
     return context;
   }
 
@@ -86,6 +91,10 @@ export class ApexASTParser {
     return rewriter.getText();
   }
 
+  // Tree will be walked on by parseTreeWalker
+  // A listner is like a subscriber that says, hey whenever you enter a class declaration or method, let me run some code
+  // Purpose - To generate an ApexParser Listener that knows what to look for in the AST (Abstract Syntax Tree)
+  // How to update internal maps and sets like: implementsInterface, methodParameter, namespaceChange, nonReplacableMethodParameter, hasCallMethod
   private createASTListener(): ApexParserListener {
     class ApexMigrationListener implements ApexParserListener {
       public constructor(private parser: ApexASTParser) {

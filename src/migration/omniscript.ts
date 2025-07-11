@@ -18,7 +18,7 @@ import { ObjectMapping } from './interfaces';
 import { NetUtils, RequestMethod } from '../utils/net';
 import { Connection, Messages } from '@salesforce/core';
 import { UX } from '@salesforce/command';
-import { OSAssessmentInfo, OmniAssessmentInfo, IPAssessmentInfo } from '../../src/utils';
+import { OSAssessmentInfo, OmniAssessmentInfo, IPAssessmentInfo, StorageMap, OmniScriptStorage } from '../../src/utils';
 import {
   getAllFunctionMetadata,
   getReplacedString,
@@ -32,6 +32,8 @@ import { createProgressBar } from './base';
 export class OmniScriptMigrationTool extends BaseMigrationTool implements MigrationTool {
   private readonly exportType: OmniScriptExportType;
   private readonly allVersions: boolean;
+
+  private omniscriptStorageMap: StorageMap;
 
   // Source Custom Object Names
   static readonly OMNISCRIPT_NAME = 'OmniScript__c';
@@ -487,7 +489,14 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   async migrate(): Promise<MigrationResult[]> {
     // Get All Records from OmniScript__c (IP & OS Parent Records)
-    const omniscripts = await this.getAllOmniScripts();
+    // const omniscripts = await this.getAllOmniScripts();
+
+    let omniscripts = await this.getAllOmniScripts();
+    let filteredOmniscripts = omniscripts.filter(
+      (card: any) => typeof card === 'object' && 'Name' in card && card.Name.includes('Alpha')
+    );
+    omniscripts = filteredOmniscripts;
+
     const functionDefinitionMetadata = await getAllFunctionMetadata(this.namespace, this.connection);
     populateRegexForFunctionMetadata(functionDefinitionMetadata);
 
@@ -502,15 +511,20 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     progressBar.start(omniscripts.length, progressCounter);
 
     for (let omniscript of omniscripts) {
+      // HERE WE HAVE THE PREMIGRATION DATA
       const mappedRecords = [];
       // const originalRecords = new Map<string, AnyJson>();
       const recordId = omniscript['Id'];
       const isOsActive = omniscript[`${this.namespacePrefix}IsActive__c`];
+      let storageValue: OmniScriptStorage;
 
       progressBar.update(++progressCounter);
 
       // Create a map of the original OmniScript__c records
       originalOsRecords.set(recordId, omniscript);
+      storageValue.type = omniscript['Type'];
+      storageValue.subtype = omniscript['Subtype'];
+      storageValue.language = omniscript['Language'];
 
       // Check if this is an Angular OmniScript that should be skipped
       const omniProcessType = omniscript[`${this.namespacePrefix}IsProcedure__c`]
@@ -518,7 +532,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         : 'OmniScript';
       if (omniProcessType === 'OmniScript') {
         const type = omniscript[this.namespacePrefix + 'IsLwcEnabled__c'] ? 'LWC' : 'Angular';
+        // Angular being processed
         if (type === 'Angular') {
+          // TODO - ADD TO STORAGE
           // Skip Angular OmniScripts and add a warning record
           const warningMessage = this.messages.getMessage('angularOmniscriptWarningMessage');
           const skippedResponse: UploadRecordResult = {
@@ -542,8 +558,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       omniscript[`${this.namespacePrefix}IsActive__c`] = false;
 
       // Get All elements for each OmniScript__c record(i.e IP/OS)
-      const elements = await this.getAllElementsForOmniScript(recordId);
+      const elements = await this.getAllElementsForOmniScript(recordId); // For IP okay, what about Omniscrit and OmniscritDefinition enitity
       if (omniscript[`${this.namespacePrefix}IsProcedure__c`] === true) {
+        // If it is an Integration Procedure
         // do the formula replacement from custom to standard notation
         if (functionDefinitionMetadata.length > 0 && elements.length > 0) {
           for (let ipElement of elements) {
@@ -574,6 +591,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       // Clean type, subtype
       mappedOmniScript[OmniScriptMappings.Type__c] = this.cleanName(mappedOmniScript[OmniScriptMappings.Type__c]);
       mappedOmniScript[OmniScriptMappings.SubType__c] = this.cleanName(mappedOmniScript[OmniScriptMappings.SubType__c]);
+
+      // NOTE - AROUND HERE WE HAVE THE CLEAN NAME, LATER DUPLICATES COME
 
       // Check duplicated name
       let mappedOsName;
@@ -617,6 +636,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         mappedOmniScript
       );
 
+      // This seems to be the best place
+
+      // IMP - Mapped omniscript has the type subtype language info - THIS CAN BE USED
       if (osUploadResponse.success) {
         // Fix errors
         if (!osUploadResponse.success) {
@@ -640,6 +662,11 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           );
         }
 
+        osUploadResponse.type = mappedOmniScript[OmniScriptMappings.Type__c];
+        osUploadResponse.subtype = mappedOmniScript[OmniScriptMappings.SubType__c];
+        osUploadResponse.langugage = mappedOmniScript[OmniScriptMappings.Language__c];
+
+        // FROM HERE WE ARE USING THE OSUploadResponse
         try {
           // Upload All elements for each OmniScript__c record(i.e IP/OS)
           await this.uploadAllElements(osUploadResponse, elements);
@@ -700,6 +727,11 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         } finally {
           // Create the return records and response which have been processed
           osUploadInfo.set(recordId, osUploadResponse);
+          storageValue.type = 'ABC';
+          storageValue.subtype = 'DEF';
+          storageValue.language = 'English';
+          this.omniscriptStorageMap['key'] = storageValue;
+          // This seems to be the best place
         }
       }
 
@@ -708,6 +740,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     progressBar.stop();
 
     const objectMigrationResults: MigrationResult[] = [];
+
+    this.prepareStorage(osUploadInfo, originalOsRecords);
 
     if (this.exportType === OmniScriptExportType.All || this.exportType === OmniScriptExportType.IP) {
       objectMigrationResults.push(
@@ -719,6 +753,34 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     }
 
     return objectMigrationResults;
+  }
+
+  private prepareStorage(results: Map<string, UploadRecordResult>, records: Map<string, any>) {
+    Logger.logVerbose('Started preparing storage');
+    // let resultMap: Map<string, any> = new Map<string, any>();
+    for (let key of Array.from(records.keys())) {
+      try {
+        let oldrecord = records.get(key);
+        let newrecord = results.get(key);
+
+        let oldType = oldrecord[this.namespacePrefix + 'Type__c'];
+        let oldSubtype = oldrecord[this.namespacePrefix + 'SubType__c'];
+        let oldLanguage = oldrecord[this.namespacePrefix + 'Language__c'];
+
+        // newrecord is undefined. Will need to populate error
+        let newType = newrecord['type'];
+        let newSubtype = newrecord['subtype'];
+        let newLanguage = newrecord['language']; // Coming as undefined - newLanguage for migrated record
+
+        Logger.logVerbose(`Old - ${oldType} ${oldSubtype} ${oldLanguage}`);
+        Logger.logVerbose(`New - ${newType} ${newSubtype} ${newLanguage}`);
+
+        Logger.logVerbose(JSON.stringify(oldrecord));
+        Logger.logVerbose(JSON.stringify(newrecord));
+      } catch (error) {
+        Logger.logVerbose(error);
+      }
+    }
   }
 
   // Using this small method, As IP & OS lives in same object -> So returning the IP and OS in the end, after the migration is done
@@ -793,6 +855,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const filters = new Map<string, any>();
     filters.set(this.namespacePrefix + 'OmniScriptId__c', recordId);
 
+    //vlocity_cmt__Element__c
+    // ResponseAction 1 of IP "a33Ow0000000LHNIA2" is coming from here // {"executionConditionalFormula":"","useFormulas":true,"additionalOutput":{"ABC":"ABCValue"},"returnOnlyAdditionalOutput":true,"returnFullDataJSON":false,"responseFormat":"JSON","responseJSONPath":"","responseJSONNode":"","sendJSONPath":"","sendJSONNode":"","responseDefaultData":{},"vlcResponseHeaders":{},"show":null,"label":"ResponseAction1","disOnTplt":false}
     // const queryFilterStr = ` Where ${this.namespacePrefix}OmniScriptId__c = '${omniScriptData.keys().next().value}'`;
     return await QueryTools.queryWithFilter(
       this.connection,
@@ -828,6 +892,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     let exit = false; // Counter variable to exit after all parent-child elements inserted
     var elementsUploadInfo = new Map<string, UploadRecordResult>(); // Info for Uploaded Elements to be returned
 
+    // Example of this is omniscript step having text inside it a21Ow0000000Z7RIAU - ElementId and in Omniscript Definition ParenetElementId
+    // Step has Level=0
+    // Text has Level=1
     do {
       let tempElements = []; // Stores Elements at a same level starting with levelCount = 0 level (parent elements)
       for (let element of elements) {

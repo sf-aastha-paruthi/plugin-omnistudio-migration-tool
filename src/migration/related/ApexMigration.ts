@@ -117,6 +117,7 @@ export class ApexMigration extends BaseRelatedObjectMigration {
   }
 
   public processApexFile(file: File, type = 'migration'): ApexAssessmentInfo {
+    // Here we are reading the file. Before only the metadata is being fetched
     const fileContent = fs.readFileSync(file.location, 'utf8');
     const interfaces: InterfaceImplements[] = [];
     interfaces.push(this.vlocityOpenInterface, this.vlocityOpenInterface2, this.callableInterface);
@@ -171,7 +172,7 @@ export class ApexMigration extends BaseRelatedObjectMigration {
   }
 
   private processApexFileForRemotecalls(file: File, parser: ApexASTParser): TokenUpdater[] {
-    const implementsInterface = parser.implementsInterfaces;
+    const implementsInterface = parser.implementsInterfaces; // TODO - Need to see what this does
     const tokenUpdates: TokenUpdater[] = [];
 
     // Case 1: Already implements just System.Callable - no changes needed

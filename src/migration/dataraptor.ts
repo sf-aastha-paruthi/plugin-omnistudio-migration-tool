@@ -18,6 +18,8 @@ import { Logger } from '../utils/logger';
 import { createProgressBar } from './base';
 
 export class DataRaptorMigrationTool extends BaseMigrationTool implements MigrationTool {
+  // private readonly migrationStorage: Map<string, DRStorage> = new Map();
+
   static readonly DRBUNDLE_NAME = 'DRBundle__c';
   static readonly DRMAPITEM_NAME = 'DRMapItem__c';
 
@@ -60,7 +62,8 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
 
     // Query all dataraptors and the respective items
     DebugTimer.getInstance().lap('Query data raptors');
-    const dataRaptors = await this.getAllDataRaptors();
+    //let dataRaptors = await this.getAllDataRaptors();
+    let dataRaptors = [];
     const dataRaptorItemsData = await this.getAllItems();
 
     // Query all the functionMetadata with all required fields
@@ -212,7 +215,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       DebugTimer.getInstance().lap('Query data raptors');
       Logger.log(this.messages.getMessage('startingDataRaptorAssessment'));
       const dataRaptors = await this.getAllDataRaptors();
-
+      //let dataRaptors = [];
       const dataRaptorAssessmentInfos = this.processDRComponents(dataRaptors);
       return dataRaptorAssessmentInfos;
     } catch (err) {

@@ -109,6 +109,13 @@ export default class Migrate extends OmniStudioBaseCommand {
       return;
     }
 
+    try {
+      Logger.logVerbose('ABC Trying to enable the required setting');
+      await OrgPreferences.enableExperienceBundleMetadataAPI(conn);
+    } catch (error) {
+      Logger.logVerbose('ABCD error occurred' + JSON.stringify(error));
+    }
+
     // Enable Omni preferences
     try {
       orgs.rollbackFlags = await OrgPreferences.checkRollbackFlags(conn);
@@ -157,10 +164,14 @@ export default class Migrate extends OmniStudioBaseCommand {
     // Migrate individual objects
     const debugTimer = DebugTimer.getInstance();
     // We need to truncate the standard objects first
-    let objectMigrationResults = await this.truncateObjects(migrationObjects, debugTimer);
-    const allTruncateComplete = objectMigrationResults.length === 0;
 
-    if (allTruncateComplete) {
+    // let objectMigrationResults = await this.truncateObjects(migrationObjects, debugTimer);
+    let objectMigrationResults = await this.truncateObjects(migrationObjects, debugTimer);
+
+    const allTruncateComplete = objectMigrationResults.length === 0;
+    let a = '5';
+    a = '4';
+    if (allTruncateComplete && a === '5') {
       objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer);
     }
 
@@ -176,6 +187,8 @@ export default class Migrate extends OmniStudioBaseCommand {
       targetApexNamespace
     );
     const relatedObjectMigrationResult = omnistudioRelatedObjectsMigration.migrateAll(objectsToProcess);
+
+    // TODO - HERE PACKAGEXML is getting generated
     generatePackageXml.createChangeList(
       relatedObjectMigrationResult.apexAssessmentInfos,
       relatedObjectMigrationResult.lwcAssessmentInfos

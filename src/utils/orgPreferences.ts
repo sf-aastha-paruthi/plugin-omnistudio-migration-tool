@@ -1,5 +1,6 @@
 import { Connection } from '@salesforce/core';
-import { OmniStudioSettingsMetadata, QueryResult } from './interfaces';
+import { OmniStudioSettingsMetadata, ExperienceBundleSettingsMetadata, QueryResult } from './interfaces';
+import { Logger } from './logger';
 
 /**
  * Class to manage OmniStudio organization preferences
@@ -69,6 +70,33 @@ export class OrgPreferences {
       return enabledFlags;
     } catch (error) {
       throw new Error(`Failed to check rollback flags: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Enables the ExperienceBundle Metadata API setting in Digital Experience Settings
+   *
+   * @public
+   * @static
+   * @async
+   * @param {Connection} connection - Salesforce connection instance
+   * @throws {Error} If enabling the setting fails
+   * @returns {Promise<void>}
+   */
+  public static async enableExperienceBundleMetadataAPI(connection: Connection): Promise<void> {
+    try {
+      await connection.metadata.update('ExperienceBundleSettings', [
+        {
+          fullName: 'ExperienceBundle',
+          enableExperienceBundleMetadata: true,
+        } as ExperienceBundleSettingsMetadata,
+      ]);
+      Logger.logVerbose('ABCD Successfully exuected this setting');
+    } catch (error) {
+      Logger.logVerbose('MyABCD ' + JSON.stringify(error));
+      throw new Error(
+        `Failed to enable ExperienceBundle Metadata API: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

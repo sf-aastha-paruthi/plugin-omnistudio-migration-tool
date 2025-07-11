@@ -89,6 +89,7 @@ export interface AssessmentInfo {
 export interface RelatedObjectAssesmentInfo {
   apexAssessmentInfos: ApexAssessmentInfo[];
   lwcAssessmentInfos: LWCAssessmentInfo[];
+  experienceSiteAssessmentInfos: ExperienceSiteAssessmentInfo[];
 }
 export interface FlexCardAssessmentInfo {
   name: string;
@@ -129,6 +130,11 @@ export interface ApexAssessmentInfo extends FileChangeInfo {
   infos: string[];
 }
 
+export interface ExperienceSiteAssessmentInfo extends FileChangeInfo {
+  warnings: string[];
+  infos: string[];
+}
+
 export interface FileParser {
   parse(filePath: string, namespace: string): Map<string, string>;
   // saveToFile(filePath: string, content: string | undefined): void;
@@ -153,6 +159,11 @@ export interface OmniStudioSettingsMetadata {
   disableRollbackFlagsPref: boolean;
 }
 
+export interface ExperienceBundleSettingsMetadata {
+  fullName: string;
+  enableExperienceBundleBasedSiteCreation: boolean;
+}
+
 export interface QueryResult {
   DeveloperName: string;
   Value: string;
@@ -166,4 +177,30 @@ export interface QueryResult {
     DeveloperName: string;
     Value: string;
   }>;
+}
+
+export interface ExperienceBundleSettingsMetadata {
+  fullName: string;
+  enableExperienceBundleMetadata: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface StorageMap {
+  map: Map<string, Storage>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface Storage {
+  migrationStatus: string;
+}
+
+export interface OmniScriptStorage extends Storage {
+  type: string;
+  subtype: string;
+  language: string;
+}
+
+export interface FCStorage extends Storage {
+  type: string;
+  subtype: string;
 }

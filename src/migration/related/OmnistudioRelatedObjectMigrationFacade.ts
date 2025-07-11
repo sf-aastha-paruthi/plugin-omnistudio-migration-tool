@@ -4,11 +4,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Org, Messages } from '@salesforce/core';
 import * as shell from 'shelljs';
-import { ApexAssessmentInfo, DebugTimer, LWCAssessmentInfo, RelatedObjectAssesmentInfo } from '../../utils';
+import {
+  ApexAssessmentInfo,
+  DebugTimer,
+  ExperienceSiteAssessmentInfo,
+  LWCAssessmentInfo,
+  RelatedObjectAssesmentInfo,
+} from '../../utils';
 import { sfProject } from '../../utils/sfcli/project/sfProject';
 import { Logger } from '../../utils/logger';
 import { Constants } from '../../utils/constants/stringContants';
 import { ApexMigration } from './ApexMigration';
+import { ExperienceSiteMigration } from './ExperienceSiteMigration';
 import { LwcMigration } from './LwcMigration';
 
 Messages.importMessagesDirectory(__dirname);
@@ -17,7 +24,8 @@ const migrateMessages = Messages.loadMessages('@salesforce/plugin-omnistudio-mig
 
 // TODO: Uncomment code once MVP for migration is completed
 // const LWCTYPE = 'LightningComponentBundle';
-const APEXCLASS = 'Apexclass';
+// const APEXCLASS = 'Apexclass';
+const EXPERIENCEBUNDLE = 'ExperienceBundle';
 
 const defaultProjectName = 'omnistudio_migration';
 export default class OmnistudioRelatedObjectMigrationFacade {
@@ -32,6 +40,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
   protected readonly projectPath: string;
   protected readonly apexMigration: ApexMigration;
   protected readonly lwcMigration: LwcMigration;
+  protected readonly experienceSiteMigration: ExperienceSiteMigration;
 
   public constructor(
     namespace: string,
@@ -49,6 +58,8 @@ export default class OmnistudioRelatedObjectMigrationFacade {
 
     // Initialize migration instances
     this.apexMigration = new ApexMigration(this.projectPath, this.namespace, this.org, targetApexNamespace);
+    this.experienceSiteMigration = new ExperienceSiteMigration(this.projectPath, this.namespace, this.org);
+
     // TODO: Uncomment code once MVP for migration is completed
     // this.lwcMigration = new LwcMigration(this.projectPath, this.namespace, this.org);
   }
@@ -66,9 +77,15 @@ export default class OmnistudioRelatedObjectMigrationFacade {
     //   sfProject.retrieve(LWCTYPE, this.org.getUsername());
     // }
     if (relatedObjects.includes(Constants.Apex)) {
-      sfProject.retrieve(APEXCLASS, this.org.getUsername());
+      Logger.logVerbose('Retreiving apex classes');
+      // sfProject.retrieve(APEXCLASS, this.org.getUsername());
+      Logger.logVerbose('Started retreiving experience sites');
+      sfProject.retrieve(EXPERIENCEBUNDLE, this.org.getUsername());
+      Logger.logVerbose('Successfully retreiving experience sites');
+      Logger.logVerbose('Apex classes retreived');
     }
     shell.cd(pwd);
+    Logger.logVerbose('Retreival completed. Now exiting');
   }
 
   private processRelatedObjects(relatedObjects: string[], isMigration: boolean): RelatedObjectAssesmentInfo {
@@ -89,6 +106,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
 
     let apexAssessmentInfos: ApexAssessmentInfo[] = [];
     const lwcAssessmentInfos: LWCAssessmentInfo[] = [];
+    let experienceSiteAssessmentInfos: ExperienceSiteAssessmentInfo[] = [];
 
     // Proceed with processing logic
     try {
@@ -100,6 +118,14 @@ export default class OmnistudioRelatedObjectMigrationFacade {
       Logger.error(JSON.stringify(Error));
       Logger.error(Error.stack);
     }
+
+    try {
+      Logger.logVerbose('Now moving to experience site migration');
+      experienceSiteAssessmentInfos = this.experienceSiteMigration.migrate();
+    } catch (Error) {
+      Logger.logVerbose('Error occurred while processing the experience sites');
+    }
+
     // TODO: Uncomment code once MVP for migration is completed
     // try {
     //   if (relatedObjects.includes(Constants.LWC)) {
@@ -117,7 +143,7 @@ export default class OmnistudioRelatedObjectMigrationFacade {
     Logger.debug(timer.toString());
 
     // Return results needed for --json flag
-    return { apexAssessmentInfos, lwcAssessmentInfos };
+    return { apexAssessmentInfos, lwcAssessmentInfos, experienceSiteAssessmentInfos };
   }
 
   public migrateAll(relatedObjects: string[]): RelatedObjectAssesmentInfo {

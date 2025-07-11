@@ -12,6 +12,7 @@ function getReplacedformulaString(
   className: string,
   methodName: string
 ): string {
+  // TODO - ADDING THE CONTROLS SO THAT IF FOR SOME IP THIS GETS HIT, WE CAN TEST AND OBSERVE
   const regExStr = new RegExp('\\b' + formulaName + '\\b', 'g');
   const startIndex = formulaExpression.search(regExStr);
   const startParanthIndex = startIndex + formulaName.length;
@@ -76,6 +77,8 @@ export function getFunctionDefinitionFields(): string[] {
 export async function getAllFunctionMetadata(namespace: string, connection: Connection): Promise<AnyJson[]> {
   DebugTimer.getInstance().lap('Query FunctionDefinition__mdt');
   return await QueryTools.queryAll(connection, namespace, 'FunctionDefinition__mdt', getFunctionDefinitionFields());
+  // This is some other object we are querying
+  // This seem to be returning the custom functions and their metadata information
 }
 
 export function populateRegexForFunctionMetadata(functionDefinitionMetadata: AnyJson[]) {
@@ -92,7 +95,7 @@ export function getReplacedString(
   for (let functionDefMd of functionDefinitionMetadata) {
     const regExStr = functionDefMd['regex'];
     const match = formulaSyntax.match(regExStr);
-    const numberOfOccurances: number = match !== null ? match.length : 0;
+    const numberOfOccurances: number = match !== null ? match.length : 0; // Dont know why the hell control is not coming here
     if (numberOfOccurances > 0) {
       for (var count: number = 1; count <= numberOfOccurances; count++) {
         formulaSyntax = getReplacedformulaString(

@@ -43,6 +43,9 @@ export interface UploadRecordResult {
   warnings: string[];
   hasErrors: boolean;
   success?: boolean;
+  type?: string;
+  subtype?: string;
+  langugage?: string;
 }
 
 export interface MigrationResult {
@@ -90,4 +93,51 @@ export type CustomLabelMigrationTool = MigrationTool;
 export interface RelatedObjectMigrationResult {
   apexClasses: string[];
   lwcComponents: string[];
+}
+
+export interface Metadata {
+  regions: Region[];
+  key: any;
+}
+
+export interface PageJson {
+  appPageId: string;
+  componentName: string;
+  dataProviders: any[]; // Replace 'any' with a specific type if known
+  id: string;
+  label: string;
+  regions: Region[];
+  themeLayoutType: string;
+  type: string;
+  viewType: string;
+}
+
+export interface Region {
+  id: string;
+  regionName: string;
+  type: string;
+  components?: Component[]; // Optional, as some regions don't have components
+}
+
+export interface Component {
+  componentAttributes: ComponentAttributes;
+  componentName: string;
+  id: string;
+  renderPriority?: string;
+  renditionMap: any; // Replace with better type if known
+  type: string;
+  subtype?: string;
+  language?: string;
+}
+
+export interface ComponentAttributes {
+  // This is a union of possible structures. You can separate them if needed.
+  layout?: string;
+  params?: string;
+  standAlone?: boolean;
+  target?: string;
+
+  customHeadTags?: string;
+  description?: string;
+  title?: string;
 }
