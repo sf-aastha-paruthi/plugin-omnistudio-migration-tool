@@ -270,7 +270,7 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
     } else {
       component.componentName = TARGET_COMPONENT_NAME_FC;
 
-      const keysToDelete = ['target'];
+      const keysToDelete = ['target', 'layout', 'params', 'standalone'];
       keysToDelete.forEach((key) => delete currentAttribute[key]);
 
       currentAttribute['flexcardName'] = targetDataFromStorageFC.name;
