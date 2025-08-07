@@ -395,6 +395,21 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
               }
             }
           }
+
+          // Case 3: Web Page navigation
+          else if (action.stateAction.targetType === 'Web Page' && action.stateAction['Web Page']) {
+            const webPage = action.stateAction['Web Page'];
+            if (webPage.targetName) {
+              // Check if the targetName contains OmniScript wrapper references
+              const targetName = webPage.targetName;
+              if (this.isOmniScriptNavigationUrl(targetName)) {
+                flexCardAssessmentInfo.warnings.push(
+                  this.messages.getMessage('webPageOmniScriptNavigationDetected', [targetName])
+                );
+                flexCardAssessmentInfo.migrationStatus = 'Need Manual Intervention';
+              }
+            }
+          }
         }
       }
     }
@@ -897,5 +912,21 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   private getCardFields(): string[] {
     return Object.keys(CardMappings);
+  }
+
+  /**
+   * Check if a URL is an OmniScript navigation URL
+   * @param url The URL to check
+   * @returns true if the URL contains OmniScript wrapper references
+   */
+  private isOmniScriptNavigationUrl(url: string): boolean {
+    if (!url || typeof url !== 'string') {
+      return false;
+    }
+
+    // Check for common OmniScript wrapper patterns
+    const omniScriptPatterns = ['c__target=c:', '/lightning/cmp/', 'c__layout=lightning'];
+
+    return omniScriptPatterns.some((pattern) => url.includes(pattern));
   }
 }
