@@ -78,9 +78,19 @@ export class BaseMigrationTool {
    * @returns The property without prefix
    */
   protected getCleanFieldName(fieldName: string): string {
-    const idx = fieldName.indexOf('__');
-    if (idx > -1) {
-      return fieldName.substring(idx + 2);
+    const firstDoubleUnderscore = fieldName.indexOf('__');
+    if (firstDoubleUnderscore > 0) {
+      // Changed from > -1 to > 0 to ensure there are characters before __
+      const beforeUnderscore = fieldName.substring(0, firstDoubleUnderscore);
+      const afterUnderscore = fieldName.substring(firstDoubleUnderscore + 2);
+
+      // Only treat this as a namespace prefix if:
+      // 1. There's substantial content before the first __ (namespace)
+      // 2. There's content after the first __ (field name)
+      // 3. The before part looks like a namespace (contains alphanumeric/underscore)
+      if (beforeUnderscore.length > 0 && afterUnderscore.length > 0 && /^[a-zA-Z0-9_]+$/.test(beforeUnderscore)) {
+        return afterUnderscore;
+      }
     }
     return fieldName;
   }
