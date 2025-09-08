@@ -37,6 +37,7 @@ import { StringVal } from '../utils/StringValue/stringval';
 import { Logger } from '../utils/logger';
 import { createProgressBar } from './base';
 import { StorageUtil } from '../utils/storageUtil';
+import { StandardDataModelValidator } from '../utils/standardDataModelValidator';
 
 export class OmniScriptMigrationTool extends BaseMigrationTool implements MigrationTool {
   private readonly exportType: OmniScriptExportType;
@@ -303,6 +304,14 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
       if (omniAssessmentInfo.type === 'OmniScript') {
         const type = omniscript[this.namespacePrefix + 'IsLwcEnabled__c'] ? 'LWC' : 'Angular';
+
+        // Perform standard data model validation
+        const standardDataModelValidation = StandardDataModelValidator.validateComponent(
+          'OmniScript',
+          omniscript,
+          this.namespace
+        );
+
         const osAssessmentInfo: OSAssessmentInfo = {
           name: omniAssessmentInfo.name,
           type: type,
@@ -317,13 +326,21 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           dependenciesRemoteAction: omniAssessmentInfo.dependenciesRemoteAction,
           dependenciesLWC: omniAssessmentInfo.dependenciesLWC,
           infos: [],
-          warnings: omniAssessmentInfo.warnings,
-          errors: [],
+          warnings: [...omniAssessmentInfo.warnings, ...standardDataModelValidation.warnings],
+          errors: [...standardDataModelValidation.errors],
           migrationStatus: omniAssessmentInfo.migrationStatus,
           nameMapping: omniAssessmentInfo.nameMapping,
+          standardDataModelValidation,
         };
         osAssessmentInfos.push(osAssessmentInfo);
       } else {
+        // Perform standard data model validation for Integration Procedure
+        const standardDataModelValidation = StandardDataModelValidator.validateComponent(
+          'OmniScript', // IP uses same mappings as OmniScript
+          omniscript,
+          this.namespace
+        );
+
         const ipAssessmentInfo: IPAssessmentInfo = {
           name: omniAssessmentInfo.name,
           id: omniscript['Id'],
@@ -333,10 +350,11 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           dependenciesOS: omniAssessmentInfo.dependenciesOS,
           dependenciesRemoteAction: omniAssessmentInfo.dependenciesRemoteAction,
           infos: [],
-          warnings: omniAssessmentInfo.warnings,
+          warnings: [...omniAssessmentInfo.warnings, ...standardDataModelValidation.warnings],
           migrationStatus: omniAssessmentInfo.migrationStatus,
-          errors: [],
+          errors: [...standardDataModelValidation.errors],
           path: '',
+          standardDataModelValidation,
         };
         ipAssessmentInfos.push(ipAssessmentInfo);
       }
@@ -588,6 +606,13 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
     }
 
+    // Perform standard data model validation
+    const standardDataModelValidation = StandardDataModelValidator.validateComponent(
+      'OmniScript',
+      omniscript,
+      this.namespace
+    );
+
     const result: OSAssessmentInfo = {
       name: recordName,
       id: omniscript['Id'],
@@ -598,13 +623,14 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       dependenciesRemoteAction: dependenciesRA,
       dependenciesLWC: dependenciesLWC,
       infos: [],
-      warnings: warnings,
-      errors: [],
+      warnings: [...warnings, ...standardDataModelValidation.warnings],
+      errors: [...standardDataModelValidation.errors],
       migrationStatus: assessmentStatus,
       type: omniProcessType,
       missingDR: missingDR,
       missingIP: missingIP,
       missingOS: missingOS,
+      standardDataModelValidation,
     };
 
     if (omniProcessType === this.OMNISCRIPT) {

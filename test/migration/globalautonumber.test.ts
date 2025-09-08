@@ -478,9 +478,6 @@ describe('GlobalAutoNumberMigrationTool', () => {
       const result = (globalAutoNumberMigrationTool as any).mapGlobalAutoNumberRecord(sourceRecord);
 
       // Assert
-      // Note: Due to a bug in getCleanFieldName method, field mapping is not working correctly
-      // The method removes everything after the first __, so Increment__c becomes 'c'
-      // This causes fields to not be mapped properly
       expect(result).to.deep.include({
         Name: 'Test-GAN-1', // Name should be preserved with special characters
         attributes: {
@@ -488,7 +485,6 @@ describe('GlobalAutoNumberMigrationTool', () => {
           referenceId: '001',
         },
       });
-      // TODO: Fix getCleanFieldName method to only remove namespace prefixes, not field suffixes
     });
 
     it('should handle records with namespace prefixes', () => {
@@ -508,7 +504,6 @@ describe('GlobalAutoNumberMigrationTool', () => {
       const result = (globalAutoNumberMigrationTool as any).mapGlobalAutoNumberRecord(sourceRecord);
 
       // Assert
-      // Note: Due to a bug in getCleanFieldName method, field mapping is not working correctly
       expect(result).to.deep.include({
         Name: 'TestGAN1',
         attributes: {

@@ -1,5 +1,6 @@
 import { File } from '../utils/file/fileUtil';
 import { CustomLabelAssessmentInfo, CustomLabelStatistics } from './customLabels';
+import { StandardDataModelValidationResult } from './standardDataModelValidator';
 
 export interface MigratedObject {
   name: string;
@@ -54,6 +55,7 @@ export interface OSAssessmentInfo {
   warnings: string[];
   errors: string[];
   nameMapping?: OmniscriptNameMapping;
+  standardDataModelValidation?: StandardDataModelValidationResult;
 }
 
 export interface FlexcardNameMapping {
@@ -83,6 +85,7 @@ export interface IPAssessmentInfo {
   errors: string[];
   path: string;
   migrationStatus: 'Ready for migration' | 'Failed' | 'Skipped' | 'Complete' | 'Needs Manual Intervention' | 'Warnings';
+  standardDataModelValidation?: StandardDataModelValidationResult;
 }
 export interface FileChangeInfo {
   path: string;
@@ -137,6 +140,7 @@ export interface FlexCardAssessmentInfo {
   errors: string[];
   migrationStatus: 'Ready for migration' | 'Failed' | 'Skipped' | 'Complete' | 'Needs Manual Intervention' | 'Warnings';
   nameMapping?: FlexcardNameMapping;
+  standardDataModelValidation?: StandardDataModelValidationResult;
 }
 
 export interface FlexcardNameMapping {
@@ -155,6 +159,7 @@ export interface DataRaptorAssessmentInfo {
   errors: string[];
   apexDependencies: string[];
   migrationStatus: 'Ready for migration' | 'Failed' | 'Skipped' | 'Complete' | 'Needs Manual Intervention' | 'Warnings';
+  standardDataModelValidation?: StandardDataModelValidationResult;
 }
 
 export interface GlobalAutoNumberAssessmentInfo {
@@ -164,6 +169,7 @@ export interface GlobalAutoNumberAssessmentInfo {
   infos: string[];
   warnings: string[];
   errors: string[];
+  standardDataModelValidation?: StandardDataModelValidationResult;
 }
 
 export interface OmniAssessmentInfo {
