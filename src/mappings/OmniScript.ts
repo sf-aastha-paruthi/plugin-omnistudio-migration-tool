@@ -24,4 +24,29 @@ const mappings = {
   Version__c: 'VersionNumber',
 };
 
-export default mappings;
+const mappingsStandard = {
+  Description: 'Description',
+  CustomJavaScript: 'CustomJavaScript',
+  IsMetadataCacheDisabled: 'IsMetadataCacheDisabled',
+  ElementTypeComponentMapping: 'ElementTypeComponentMapping',
+  IsActive: 'IsActive',
+  IsWebCompEnabled: 'IsWebCompEnabled',
+  IsIntegrationProcedure: 'IsIntegrationProcedure',
+  IsOmniScriptEmbeddable: 'IsOmniScriptEmbeddable',
+  IsTestProcedure: 'IsTestProcedure',
+  Language: 'Language',
+  LastPreviewPage: 'LastPreviewPage',
+  WebComponentKey: 'WebComponentKey',
+  Name: 'Name',
+  OmniProcessType: 'OmniProcessType',
+  OmniProcessKey: 'OmniProcessKey',
+  ResponseCacheType: 'ResponseCacheType',
+  PropertySetConfig: 'PropertySetConfig',
+  RequiredPermission: 'RequiredPermission',
+  SubType: 'SubType',
+  CustomHtmlTemplates: 'CustomHtmlTemplates',
+  Type: 'Type',
+  VersionNumber: 'VersionNumber',
+};
+
+export default { mappings, mappingsStandard };
