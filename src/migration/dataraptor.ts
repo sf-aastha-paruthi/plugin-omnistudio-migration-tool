@@ -19,6 +19,7 @@ import { getReplacedString } from '../utils/formula/FormulaUtil';
 import { StringVal } from '../utils/StringValue/stringval';
 import { Logger } from '../utils/logger';
 import { createProgressBar } from './base';
+import { ISUSECASE2 } from '../utils/constants/migrationConfig';
 
 export class DataRaptorMigrationTool extends BaseMigrationTool implements MigrationTool {
   static readonly DRBUNDLE_NAME = 'DRBundle__c';
@@ -26,8 +27,6 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
 
   static readonly OMNIDATATRANSFORM_NAME = 'OmniDataTransform';
   static readonly OMNIDATATRANSFORMITEM_NAME = 'OmniDataTransformItem';
-
-  static readonly ISUSECASE2 = true;
 
   getName(): string {
     return 'Data Mappers';
@@ -70,7 +69,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const dataRaptorItemsData = await this.getAllItems();
 
     // Query all the functionMetadata with all required fields
-    // const functionDefinitionMetadata = await getAllFunctionMetadata(DataRaptorMigrationTool.ISUSECASE2 ? '' : this.namespace, this.connection);
+    // const functionDefinitionMetadata = await getAllFunctionMetadata(ISUSECASE2 ? '' : this.namespace, this.connection);
     // populateRegexForFunctionMetadata(functionDefinitionMetadata);
     // Start transforming each dataRaptor
     const functionDefinitionMetadata: AnyJson = [];
@@ -79,33 +78,19 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     if (functionDefinitionMetadata.length > 0 && dataRaptorItemsData.length > 0) {
       // do the formula updation in the DR items
       for (let drItem of dataRaptorItemsData) {
-        if (
-          drItem[
-            DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-          ] != null
-        ) {
+        if (drItem[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'] != null) {
           try {
             var originalString = getReplacedString(
               this.namespacePrefix,
-              drItem[
-                DataRaptorMigrationTool.ISUSECASE2
-                  ? DRMapItemMappings['Formula__c']
-                  : this.namespacePrefix + 'Formula__c'
-              ],
+              drItem[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'],
               functionDefinitionMetadata
             );
-            drItem[
-              DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-            ] = originalString;
+            drItem[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'] = originalString;
           } catch (ex) {
             Logger.error('Error updating formula for data mapper', ex);
             Logger.logVerbose(
               this.messages.getMessage('formulaSyntaxError', [
-                drItem[
-                  DataRaptorMigrationTool.ISUSECASE2
-                    ? DRMapItemMappings['Formula__c']
-                    : this.namespacePrefix + 'Formula__c'
-                ],
+                drItem[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'],
               ])
             );
           }
@@ -114,124 +99,63 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     }
     let progressCounter = 0;
     let nonMigrationDataRaptors = dataRaptors.filter(
-      (dr) =>
-        dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] !==
-        'Migration'
+      (dr) => dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] !== 'Migration'
     ).length;
     Logger.log(this.messages.getMessage('foundDataRaptorsToMigrate', [nonMigrationDataRaptors]));
     const progressBar = createProgressBar('Migrating', 'Data Mappers');
     progressBar.start(nonMigrationDataRaptors, progressCounter);
     for (let dr of dataRaptors) {
       // Skip if Type is "Migration"
-      if (
-        dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] ===
-        'Migration'
-      )
-        continue;
+      if (dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] === 'Migration') continue;
       progressBar.update(++progressCounter);
       const recordId = dr['Id'];
       const name = dr['Name'];
 
-      const typeKey =
-        dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'];
-      const outputTypeKey =
-        dr[
-          DataRaptorMigrationTool.ISUSECASE2
-            ? DRBundleMappings['OutputType__c']
-            : this.namespacePrefix + 'OutputType__c'
-        ];
+      const typeKey = dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'];
+      const outputTypeKey = dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'];
       const targetOutputDocumentIdentifier =
         dr[
-          DataRaptorMigrationTool.ISUSECASE2
+          ISUSECASE2
             ? DRBundleMappings['TargetOutDocuSignTemplateId__c']
             : this.namespacePrefix + 'TargetOutDocuSignTemplateId__c'
         ];
       const targetOutputFileName =
-        dr[
-          DataRaptorMigrationTool.ISUSECASE2
-            ? DRBundleMappings['TargetOutPdfDocName__c']
-            : this.namespacePrefix + 'TargetOutPdfDocName__c'
-        ];
+        dr[ISUSECASE2 ? DRBundleMappings['TargetOutPdfDocName__c'] : this.namespacePrefix + 'TargetOutPdfDocName__c'];
 
       if (typeKey === null) {
-        dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] =
-          'Extract';
+        dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] = 'Extract';
       }
 
       // Fix up Input/Output types for older DR's
       switch (typeKey) {
         case 'Transform':
-          dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] =
-            'Transform';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['InputType__c']
-              : this.namespacePrefix + 'InputType__c'
-          ] = 'JSON';
+          dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] = 'Transform';
+          dr[ISUSECASE2 ? DRBundleMappings['InputType__c'] : this.namespacePrefix + 'InputType__c'] = 'JSON';
           if (targetOutputDocumentIdentifier !== null) {
-            dr[
-              DataRaptorMigrationTool.ISUSECASE2
-                ? DRBundleMappings['OutputType__c']
-                : this.namespacePrefix + 'OutputType__c'
-            ] = 'DocuSign';
+            dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'DocuSign';
           } else if (
             targetOutputFileName !== null &&
             (outputTypeKey !== 'PDF' || outputTypeKey !== 'Document Template')
           ) {
-            dr[
-              DataRaptorMigrationTool.ISUSECASE2
-                ? DRBundleMappings['OutputType__c']
-                : this.namespacePrefix + 'OutputType__c'
-            ] = 'PDF';
+            dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'PDF';
           } else {
-            dr[
-              DataRaptorMigrationTool.ISUSECASE2
-                ? DRBundleMappings['OutputType__c']
-                : this.namespacePrefix + 'OutputType__c'
-            ] = 'JSON';
+            dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'JSON';
           }
           break;
         case 'Extract (JSON)':
-          dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] =
-            'Extract';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['InputType__c']
-              : this.namespacePrefix + 'InputType__c'
-          ] = 'JSON';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['OutputType__c']
-              : this.namespacePrefix + 'OutputType__c'
-          ] = 'JSON';
+          dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] = 'Extract';
+          dr[ISUSECASE2 ? DRBundleMappings['InputType__c'] : this.namespacePrefix + 'InputType__c'] = 'JSON';
+          dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'JSON';
           break;
         case 'Load (JSON)':
-          dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] =
-            'Load';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['InputType__c']
-              : this.namespacePrefix + 'InputType__c'
-          ] = 'JSON';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['OutputType__c']
-              : this.namespacePrefix + 'OutputType__c'
-          ] = 'SObject';
+          dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] = 'Load';
+          dr[ISUSECASE2 ? DRBundleMappings['InputType__c'] : this.namespacePrefix + 'InputType__c'] = 'JSON';
+          dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'SObject';
           break;
         case 'Load (Object)':
-          dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] =
-            'Load';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['InputType__c']
-              : this.namespacePrefix + 'InputType__c'
-          ] = 'SObject';
-          dr[
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DRBundleMappings['OutputType__c']
-              : this.namespacePrefix + 'OutputType__c'
-          ] = 'SObject';
+          dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] = 'Load';
+          dr[ISUSECASE2 ? DRBundleMappings['InputType__c'] : this.namespacePrefix + 'InputType__c'] = 'SObject';
+          dr[ISUSECASE2 ? DRBundleMappings['OutputType__c'] : this.namespacePrefix + 'OutputType__c'] = 'SObject';
           break;
         default: // no-op;
       }
@@ -277,9 +201,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
         const items = await this.getItemsForDataRaptor(dataRaptorItemsData, name, drUploadResponse.id);
 
         drUploadResponse.newName =
-          transformedDataRaptor[
-            DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'
-          ];
+          transformedDataRaptor[ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'];
 
         // Move the items
         await this.uploadTransformedData(DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME, items);
@@ -313,8 +235,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const drToItemsMap = new Map<string, AnyJson[]>();
     const drItems = await this.getAllItems();
     for (const drItem of drItems) {
-      const drName =
-        drItem[DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name'];
+      const drName = drItem[ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name'];
       if (drToItemsMap.has(drName)) {
         drToItemsMap.get(drName).push(drItem);
       } else {
@@ -345,7 +266,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     // Query all the functionMetadata with all required fields
     // TODO CHECK - NEED TO SEE WHAT THIS WILL MAP TO IN STANDARD ENTITIES
 
-    // const functionDefinitionMetadata = await getAllFunctionMetadata(DataRaptorMigrationTool.ISUSECASE2 ? '' : this.namespace, this.connection);
+    // const functionDefinitionMetadata = await getAllFunctionMetadata(ISUSECASE2 ? '' : this.namespace, this.connection);
     // populateRegexForFunctionMetadata(functionDefinitionMetadata);
 
     const functionDefinitionMetadata = [];
@@ -355,19 +276,13 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const progressBar = createProgressBar('Assessing', 'Data Mappers');
     let progressCounter = 0;
     let nonMigrationDataRaptors = dataRaptors.filter(
-      (dr) =>
-        dr[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] !==
-        'Migration'
+      (dr) => dr[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] !== 'Migration'
     ).length;
     Logger.log(this.messages.getMessage('foundDataRaptorsToAssess', [nonMigrationDataRaptors]));
     progressBar.start(nonMigrationDataRaptors, progressCounter);
     // Now process each OmniScript and its elements
     for (const dataRaptor of dataRaptors) {
-      if (
-        dataRaptor[
-          DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'
-        ] === 'Migration'
-      )
+      if (dataRaptor[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] === 'Migration')
         continue;
       try {
         const dataRaptorAssessmentInfo = await this.processDataMappers(
@@ -379,14 +294,10 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
         dataRaptorAssessmentInfos.push(dataRaptorAssessmentInfo);
       } catch (e) {
         dataRaptorAssessmentInfos.push({
-          oldName:
-            dataRaptor[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'],
+          oldName: dataRaptor[ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'],
           name: '',
           id: dataRaptor['Id'],
-          type:
-            dataRaptor[
-              DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'
-            ] || '',
+          type: dataRaptor[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] || '',
           formulaChanges: [],
           infos: [],
           warnings: [],
@@ -409,8 +320,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     dataRaptorItemsMap: Map<string, AnyJson[]>,
     functionDefinitionMetadata: AnyJson[]
   ): Promise<DataRaptorAssessmentInfo> {
-    const drName =
-      dataRaptor[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'];
+    const drName = dataRaptor[ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name'];
     // Await here since processOSComponents is now async
     Logger.info(this.messages.getMessage('processingDataRaptor', [drName]));
     const warnings: string[] = [];
@@ -442,32 +352,18 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     }
     const apexDependencies = [];
     if (
-      dataRaptor[
-        DataRaptorMigrationTool.ISUSECASE2
-          ? DRBundleMappings['CustomInputClass__c']
-          : this.namespacePrefix + 'CustomInputClass__c'
-      ]
+      dataRaptor[ISUSECASE2 ? DRBundleMappings['CustomInputClass__c'] : this.namespacePrefix + 'CustomInputClass__c']
     ) {
       apexDependencies.push(
-        dataRaptor[
-          DataRaptorMigrationTool.ISUSECASE2
-            ? DRBundleMappings['CustomInputClass__c']
-            : this.namespacePrefix + 'CustomInputClass__c'
-        ]
+        dataRaptor[ISUSECASE2 ? DRBundleMappings['CustomInputClass__c'] : this.namespacePrefix + 'CustomInputClass__c']
       );
     }
     if (
-      dataRaptor[
-        DataRaptorMigrationTool.ISUSECASE2
-          ? DRBundleMappings['CustomOutputClass__c']
-          : this.namespacePrefix + 'CustomOutputClass__c'
-      ]
+      dataRaptor[ISUSECASE2 ? DRBundleMappings['CustomOutputClass__c'] : this.namespacePrefix + 'CustomOutputClass__c']
     ) {
       apexDependencies.push(
         dataRaptor[
-          DataRaptorMigrationTool.ISUSECASE2
-            ? DRBundleMappings['CustomOutputClass__c']
-            : this.namespacePrefix + 'CustomOutputClass__c'
+          ISUSECASE2 ? DRBundleMappings['CustomOutputClass__c'] : this.namespacePrefix + 'CustomOutputClass__c'
         ]
       );
     }
@@ -477,10 +373,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     if (drItems) {
       for (const drItem of drItems) {
         // Logger.log(dataRaptor[this.namespacePrefix + 'Formula__c']);
-        const formula =
-          drItem[
-            DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-          ];
+        const formula = drItem[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'];
         if (formula) {
           try {
             const newFormula = getReplacedString(this.namespacePrefix, formula, functionDefinitionMetadata);
@@ -501,10 +394,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       oldName: existingDRNameVal.val,
       name: existingDRNameVal.cleanName(),
       id: dataRaptor['Id'],
-      type:
-        dataRaptor[
-          DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'
-        ] || '',
+      type: dataRaptor[ISUSECASE2 ? DRBundleMappings['Type__c'] : this.namespacePrefix + 'Type__c'] || '',
       formulaChanges: formulaChanges,
       infos: [],
       apexDependencies: apexDependencies,
@@ -520,18 +410,14 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     //DebugTimer.getInstance().lap('Query DRBundle');
     return await QueryTools.queryAll(
       this.connection,
-      DataRaptorMigrationTool.ISUSECASE2 ? '' : this.namespace,
-      DataRaptorMigrationTool.ISUSECASE2
-        ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME
-        : DataRaptorMigrationTool.DRBUNDLE_NAME,
+      ISUSECASE2 ? '' : this.namespace,
+      ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME,
       this.getDRBundleFields()
     ).catch((err) => {
       if (err.errorCode === 'INVALID_TYPE') {
         throw new InvalidEntityTypeError(
           `${
-            DataRaptorMigrationTool.ISUSECASE2
-              ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME
-              : DataRaptorMigrationTool.DRBUNDLE_NAME
+            ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME
           } type is not found under this namespace`
         );
       }
@@ -544,10 +430,8 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     //Query all Elements
     return await QueryTools.queryAll(
       this.connection,
-      DataRaptorMigrationTool.ISUSECASE2 ? '' : this.namespace,
-      DataRaptorMigrationTool.ISUSECASE2
-        ? DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME
-        : DataRaptorMigrationTool.DRMAPITEM_NAME,
+      ISUSECASE2 ? '' : this.namespace,
+      ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME : DataRaptorMigrationTool.DRMAPITEM_NAME,
       this.getDRMapItemFields()
     ).catch((err) => {
       Logger.error('Error querying data raptor items', err);
@@ -580,13 +464,9 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       originalRecords = new Map<string, AnyJson>();
 
     dataRaptorItems.forEach((drItem) => {
-      const recordId =
-        drItem[DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Id'] : this.namespacePrefix + 'Id'];
+      const recordId = drItem[ISUSECASE2 ? DRMapItemMappings['Id'] : this.namespacePrefix + 'Id'];
       // const itemParentId = drItem[nsPrefix + 'OmniDataTransformationId__c']
-      if (
-        drItem[DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name'] ===
-        drName
-      ) {
+      if (drItem[ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name'] === drName) {
         mappedRecords.push(this.mapDataRaptorItemData(drItem, drId));
       }
 
@@ -619,15 +499,14 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     });
 
     mappedObject['Name'] = this.cleanName(
-      mappedObject[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name']
+      mappedObject[ISUSECASE2 ? DRBundleMappings['Name'] : this.namespacePrefix + 'Name']
     );
     mappedObject['IsActive'] = true;
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
       type: DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME,
-      referenceId:
-        dataRaptorRecord[DataRaptorMigrationTool.ISUSECASE2 ? DRBundleMappings['Id'] : this.namespacePrefix + 'Id'],
+      referenceId: dataRaptorRecord[ISUSECASE2 ? DRBundleMappings['Id'] : this.namespacePrefix + 'Id'],
     };
 
     return mappedObject;
@@ -657,42 +536,34 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     // Set the parent/child relationship
     mappedObject['OmniDataTransformationId'] = omniDataTransformationId;
     mappedObject['Name'] = this.cleanName(
-      mappedObject[DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name']
+      mappedObject[ISUSECASE2 ? DRMapItemMappings['Name'] : this.namespacePrefix + 'Name']
     );
 
     // Update formula field references if NameMappingRegistry is available
     if (
       this.nameRegistry &&
-      mappedObject[
-        DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-      ]
+      mappedObject[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c']
     ) {
-      mappedObject[
-        DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-      ] = this.nameRegistry.updateDependencyReferences(
-        mappedObject[
-          DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'
-        ]
-      );
+      mappedObject[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c'] =
+        this.nameRegistry.updateDependencyReferences(
+          mappedObject[ISUSECASE2 ? DRMapItemMappings['Formula__c'] : this.namespacePrefix + 'Formula__c']
+        );
     }
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
       type: DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME,
-      referenceId:
-        dataRaptorItemRecord[
-          DataRaptorMigrationTool.ISUSECASE2 ? DRMapItemMappings['Id'] : this.namespacePrefix + 'Id'
-        ],
+      referenceId: dataRaptorItemRecord[ISUSECASE2 ? DRMapItemMappings['Id'] : this.namespacePrefix + 'Id'],
     };
 
     return mappedObject;
   }
 
   private getDRBundleFields(): string[] {
-    return DataRaptorMigrationTool.ISUSECASE2 ? Object.values(DRBundleMappings) : Object.keys(DRBundleMappings);
+    return ISUSECASE2 ? Object.values(DRBundleMappings) : Object.keys(DRBundleMappings);
   }
 
   private getDRMapItemFields(): string[] {
-    return DataRaptorMigrationTool.ISUSECASE2 ? Object.values(DRMapItemMappings) : Object.keys(DRMapItemMappings);
+    return ISUSECASE2 ? Object.values(DRMapItemMappings) : Object.keys(DRMapItemMappings);
   }
 }
