@@ -15,4 +15,19 @@ const mappings = {
   IsChildCard__c: '',
 };
 
-export default mappings;
+const mappingsStandard = {
+  Name: 'Name',
+  AuthorName: 'AuthorName',
+  ClonedFromOmniUiCardKey: 'ClonedFromOmniUiCardKey',
+  DataSourceConfig: 'DataSourceConfig',
+  Description: 'Description',
+  IsActive: 'IsActive',
+  PropertySetConfig: 'PropertySetConfig',
+  SampleDataSourceResponse: 'SampleDataSourceResponse',
+  StylingConfiguration: 'StylingConfiguration',
+  OmniUiCardType: 'OmniUiCardType',
+  VersionNumber: 'VersionNumber',
+  OmniUiCardKey: 'OmniUiCardKey',
+};
+
+export default { mappings, mappingsStandard };

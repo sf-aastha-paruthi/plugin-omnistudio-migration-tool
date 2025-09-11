@@ -6,4 +6,11 @@ const mappings = {
   Sequence__c: 'Sequence',
 };
 
-export default mappings;
+const mappingsStandard = {
+  Content: 'Content',
+  Name: 'Name',
+  OmniProcessId: 'OmniProcessId',
+  Sequence: 'Sequence',
+};
+
+export default { mappings, mappingsStandard };

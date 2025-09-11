@@ -3,8 +3,10 @@ import { AnyJson } from '@salesforce/ts-types';
 
 import OmniScriptExports from '../mappings/OmniScript';
 const { mappings: OmniScriptMappings, mappingsStandard: OmniProcessMappings } = OmniScriptExports;
-import ElementMappings from '../mappings/Element';
-import OmniScriptDefinitionMappings from '../mappings/OmniScriptDefinition';
+import ElementMappingsExport from '../mappings/Element';
+const { mappings: ElementMappings, mappingsStandard: ElementMappingsStandard } = ElementMappingsExport;
+import OmniScriptDefinitionMappingsExport from '../mappings/OmniScriptDefinition';
+const { mappings: OmniScriptDefinitionMappings, mappingsStandard: OmniScriptDefinitionMappingsStandard } = OmniScriptDefinitionMappingsExport;
 import {
   DataRaptorAssessmentInfo,
   DebugTimer,
@@ -64,6 +66,19 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
   static readonly OMNIPROCESSELEMENT_NAME = 'OmniProcessElement';
   static readonly OMNIPROCESSCOMPILATION_NAME = 'OmniProcessCompilation';
 
+  // Helper methods to get the appropriate mappings based on data model
+  private getOmniScriptMappings(): any {
+    return ISUSECASE2 ? OmniProcessMappings : OmniScriptMappings;
+  }
+
+  private getElementMappings(): any {
+    return ISUSECASE2 ? ElementMappingsStandard : ElementMappings;
+  }
+
+  private getOmniScriptDefinitionMappings(): any {
+    return ISUSECASE2 ? OmniScriptDefinitionMappingsStandard : OmniScriptDefinitionMappings;
+  }
+
   constructor(
     exportType: OmniScriptExportType,
     namespace: string,
@@ -90,12 +105,12 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   getRecordName(record: string) {
     return (
-      record[ISUSECASE2 ? OmniScriptMappings['Type__c'] : this.namespacePrefix + 'Type__c'] +
+      record[ISUSECASE2 ? this.getOmniScriptMappings()['Type__c'] : this.namespacePrefix + 'Type__c'] +
       '_' +
-      record[ISUSECASE2 ? OmniScriptMappings['SubType__c'] : this.namespacePrefix + 'SubType__c'] +
-      record[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c'] +
+      record[ISUSECASE2 ? this.getOmniScriptMappings()['SubType__c'] : this.namespacePrefix + 'SubType__c'] +
+      record[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c'] +
       '_' +
-      record[ISUSECASE2 ? OmniScriptMappings['Version__c'] : this.namespacePrefix + 'Version__c']
+      record[ISUSECASE2 ? this.getOmniScriptMappings()['Version__c'] : this.namespacePrefix + 'Version__c']
     );
   }
 
@@ -269,7 +284,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         );
       } catch (e) {
         const omniProcessType = omniscript[
-          ISUSECASE2 ? OmniScriptMappings['IsProcedure__c'] : this.namespacePrefix + 'IsProcedure__c'
+          ISUSECASE2 ? this.getOmniScriptMappings()['IsProcedure__c'] : this.namespacePrefix + 'IsProcedure__c'
         ]
           ? 'Integration Procedure'
           : 'OmniScript';
@@ -314,7 +329,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
       if (omniAssessmentInfo.type === 'OmniScript') {
         const type = omniscript[
-          ISUSECASE2 ? OmniScriptMappings['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
+          ISUSECASE2 ? this.getOmniScriptMappings()['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
         ]
           ? 'LWC'
           : 'Angular';
@@ -403,10 +418,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     }
 
     for (const elem of elements) {
-      const type = elem[ISUSECASE2 ? OmniScriptMappings['Type__c'] : this.namespacePrefix + 'Type__c'];
+      const type = elem[ISUSECASE2 ? this.getOmniScriptMappings()['Type__c'] : this.namespacePrefix + 'Type__c'];
       const elemName = `${elem['Name']}`;
       const propertySet = JSON.parse(
-        elem[ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : this.namespacePrefix + 'PropertySet__c'] || '{}'
+        elem[ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : this.namespacePrefix + 'PropertySet__c'] || '{}'
       );
 
       // Collect reserved keys from PropertySet
@@ -479,17 +494,17 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     }
 
     const omniProcessType = omniscript[
-      ISUSECASE2 ? OmniScriptMappings['IsProcedure__c'] : this.namespacePrefix + 'IsProcedure__c'
+      ISUSECASE2 ? this.getOmniScriptMappings()['IsProcedure__c'] : this.namespacePrefix + 'IsProcedure__c'
     ]
       ? 'Integration Procedure'
       : 'OmniScript';
 
-    const existingType = omniscript[ISUSECASE2 ? OmniScriptMappings['Type__c'] : this.namespacePrefix + 'Type__c'];
+    const existingType = omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Type__c'] : this.namespacePrefix + 'Type__c'];
     const existingTypeVal = new StringVal(existingType, 'type');
     const existingSubType =
-      omniscript[ISUSECASE2 ? OmniScriptMappings['SubType__c'] : this.namespacePrefix + 'SubType__c'];
+      omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['SubType__c'] : this.namespacePrefix + 'SubType__c'];
     const existingSubTypeVal = new StringVal(existingSubType, 'sub type');
-    const omniScriptName = omniscript[ISUSECASE2 ? OmniScriptMappings['Name'] : this.namespacePrefix + 'Name'];
+    const omniScriptName = omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Name'] : this.namespacePrefix + 'Name'];
     const existingOmniScriptNameVal = new StringVal(omniScriptName, 'name');
     let assessmentStatus: 'Ready for migration' | 'Warnings' | 'Needs Manual Intervention' = 'Ready for migration';
 
@@ -521,26 +536,26 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const newType = existingTypeVal.cleanName();
     const newSubType = existingSubTypeVal.cleanName();
     const newLanguage = omniscript[
-      ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c'
+      ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c'
     ]
-      ? `${omniscript[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c']}`
+      ? `${omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c']}`
       : '';
 
     const recordName =
       `${newType}_` +
       `${newSubType}` +
-      (omniscript[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c']
-        ? `_${omniscript[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c']}`
+      (omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c']
+        ? `_${omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c']}`
         : '') +
-      `_${omniscript[ISUSECASE2 ? OmniScriptMappings['Version__c'] : this.namespacePrefix + 'Version__c']}`;
+      `_${omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Version__c'] : this.namespacePrefix + 'Version__c']}`;
 
     const oldName =
       `${existingTypeVal.val}_` +
       `${existingSubTypeVal.val}` +
-      (omniscript[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c']
-        ? `_${omniscript[ISUSECASE2 ? OmniScriptMappings['Language__c'] : this.namespacePrefix + 'Language__c']}`
+      (omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c']
+        ? `_${omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Language__c'] : this.namespacePrefix + 'Language__c']}`
         : '') +
-      `_${omniscript[ISUSECASE2 ? OmniScriptMappings['Version__c'] : this.namespacePrefix + 'Version__c']}`;
+      `_${omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Version__c'] : this.namespacePrefix + 'Version__c']}`;
 
     if (!existingTypeVal.isNameCleaned()) {
       if (omniProcessType === 'Integration Procedure' && (!newType || newType.trim() === '')) {
@@ -608,7 +623,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
     if (omniProcessType === this.OMNISCRIPT) {
       const type = omniscript[
-        ISUSECASE2 ? OmniScriptMappings['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
+        ISUSECASE2 ? this.getOmniScriptMappings()['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
       ]
         ? 'LWC'
         : 'Angular';
@@ -737,7 +752,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       // const originalRecords = new Map<string, AnyJson>();
       const recordId = omniscript['Id'];
       const isOsActive =
-        omniscript[ISUSECASE2 ? OmniScriptMappings['IsActive__c'] : `${this.namespacePrefix}IsActive__c`];
+        omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['IsActive__c'] : `${this.namespacePrefix}IsActive__c`];
 
       progressBar.update(++progressCounter);
 
@@ -746,13 +761,13 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
       // Check if this is an Angular OmniScript that should be skipped
       const omniProcessType = omniscript[
-        ISUSECASE2 ? OmniScriptMappings['IsProcedure__c'] : `${this.namespacePrefix}IsProcedure__c`
+        ISUSECASE2 ? this.getOmniScriptMappings()['IsProcedure__c'] : `${this.namespacePrefix}IsProcedure__c`
       ]
         ? 'Integration Procedure'
         : 'OmniScript';
       if (omniProcessType === 'OmniScript') {
         const type = omniscript[
-          ISUSECASE2 ? OmniScriptMappings['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
+          ISUSECASE2 ? this.getOmniScriptMappings()['IsLwcEnabled__c'] : this.namespacePrefix + 'IsLwcEnabled__c'
         ]
           ? 'LWC'
           : 'Angular';
@@ -776,7 +791,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
 
       // Record is Active, Elements can't be Added, Modified or Deleted for that OS/IP
-      omniscript[ISUSECASE2 ? OmniScriptMappings['IsActive__c'] : `${this.namespacePrefix}IsActive__c`] = false;
+      omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['IsActive__c'] : `${this.namespacePrefix}IsActive__c`] = false;
 
       // Get All elements for each OmniScript__c record(i.e IP/OS)
       const elements = await this.getAllElementsForOmniScript(recordId);
@@ -813,12 +828,12 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
 
       if (
-        omniscript[ISUSECASE2 ? OmniScriptMappings['IsProcedure__c'] : `${this.namespacePrefix}IsProcedure__c`] === true
+        omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['IsProcedure__c'] : `${this.namespacePrefix}IsProcedure__c`] === true
       ) {
         // Check for missing mandatory fields for Integration Procedures
-        const existingType = omniscript[ISUSECASE2 ? OmniScriptMappings['Type__c'] : this.namespacePrefix + 'Type__c'];
+        const existingType = omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['Type__c'] : this.namespacePrefix + 'Type__c'];
         const existingSubType =
-          omniscript[ISUSECASE2 ? OmniScriptMappings['SubType__c'] : this.namespacePrefix + 'SubType__c'];
+          omniscript[ISUSECASE2 ? this.getOmniScriptMappings()['SubType__c'] : this.namespacePrefix + 'SubType__c'];
 
         if (!existingType || existingType.trim() === '') {
           const skippedResponse: UploadRecordResult = {
@@ -859,35 +874,35 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         if (functionDefinitionMetadata.length > 0 && elements.length > 0) {
           for (let ipElement of elements) {
             if (
-              ipElement[ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`] !=
+              ipElement[ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`] !=
               null
             ) {
               // Check for reserved keys while processing the PropertySet
               const propertySet = JSON.parse(
                 ipElement[
-                  ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
+                  ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
                 ] || '{}'
               );
               this.collectReservedKeys(propertySet, foundReservedKeys);
 
               var originalString =
-                ipElement[ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`];
+                ipElement[ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`];
               try {
                 originalString = getReplacedString(
                   this.namespacePrefix,
                   ipElement[
-                    ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
+                    ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
                   ],
                   functionDefinitionMetadata
                 );
-                ipElement[ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`] =
+                ipElement[ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`] =
                   originalString;
               } catch (ex) {
                 Logger.error('Error processing formula for integration procedure', ex);
                 Logger.logVerbose(
                   this.messages.getMessage('formulaSyntaxError', [
                     ipElement[
-                      ISUSECASE2 ? OmniScriptMappings['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
+                      ISUSECASE2 ? this.getOmniScriptMappings()['PropertySet__c'] : `${this.namespacePrefix}PropertySet__c`
                     ],
                   ])
                 );
@@ -1298,16 +1313,16 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const filters = new Map<string, any>();
 
     if (this.exportType === OmniScriptExportType.IP) {
-      filters.set(OmniScriptMappings['IsProcedure__c'], true);
+      filters.set(this.getOmniScriptMappings()['IsProcedure__c'], true);
     } else if (this.exportType === OmniScriptExportType.OS) {
-      filters.set(OmniScriptMappings['IsProcedure__c'], false);
+      filters.set(this.getOmniScriptMappings()['IsProcedure__c'], false);
     }
 
     if (this.allVersions) {
       const sortFields = [
-        { field: OmniScriptMappings['Type__c'], direction: SortDirection.ASC },
-        { field: OmniScriptMappings['SubType__c'], direction: SortDirection.ASC },
-        { field: OmniScriptMappings['Version__c'], direction: SortDirection.ASC },
+        { field: this.getOmniScriptMappings()['Type__c'], direction: SortDirection.ASC },
+        { field: this.getOmniScriptMappings()['SubType__c'], direction: SortDirection.ASC },
+        { field: this.getOmniScriptMappings()['Version__c'], direction: SortDirection.ASC },
       ];
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
@@ -1325,7 +1340,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         throw err;
       });
     } else {
-      filters.set(OmniScriptMappings['IsActive__c'], true);
+      filters.set(this.getOmniScriptMappings()['IsActive__c'], true);
       return await QueryTools.queryWithFilter(
         this.connection,
         '',
@@ -1559,8 +1574,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     mappedObject['OmniProcessId'] = omniProcessId;
 
     // We need to fix the child references
-    const elementType = mappedObject[ElementMappings.Type__c];
-    const propertySet = JSON.parse(mappedObject[ElementMappings.PropertySet__c] || '{}');
+    const elementType = mappedObject[this.getElementMappings().Type__c];
+    const propertySet = JSON.parse(mappedObject[this.getElementMappings().PropertySet__c] || '{}');
 
     // Use NameMappingRegistry to update all dependency references
     const updatedPropertySet = this.nameRegistry.updateDependencyReferences(propertySet);
@@ -1671,7 +1686,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
             const parts = key.split('_');
             const newKey = parts.map((p) => this.cleanName(p, true)).join('_');
             if (parts.length > 2) {
-              invalidIpReferences.set(mappedObject[ElementMappings.Name], key);
+              invalidIpReferences.set(mappedObject[this.getElementMappings().Name], key);
             }
             updatedPropertySet['integrationProcedureKey'] = newKey;
           }
@@ -1694,7 +1709,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         break;
     }
 
-    mappedObject[ElementMappings.PropertySet__c] = JSON.stringify(updatedPropertySet);
+    mappedObject[this.getElementMappings().PropertySet__c] = JSON.stringify(updatedPropertySet);
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
@@ -1723,10 +1738,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     });
 
     // Set the parent/child relationship
-    mappedObject[OmniScriptDefinitionMappings.Name] = omniProcessId;
-    mappedObject[OmniScriptDefinitionMappings.OmniScriptId__c] = omniProcessId;
+    mappedObject[this.getOmniScriptDefinitionMappings().Name] = omniProcessId;
+    mappedObject[this.getOmniScriptDefinitionMappings().OmniScriptId__c] = omniProcessId;
 
-    let content = mappedObject[OmniScriptDefinitionMappings.Content__c];
+    let content = mappedObject[this.getOmniScriptDefinitionMappings().Content__c];
     if (content) {
       try {
         content = JSON.parse(content);
@@ -1739,7 +1754,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           this.processContentChildren(content['children']);
         }
 
-        mappedObject[OmniScriptDefinitionMappings.Content__c] = JSON.stringify(content);
+        mappedObject[this.getOmniScriptDefinitionMappings().Content__c] = JSON.stringify(content);
       } catch (ex) {
         // Log
       }

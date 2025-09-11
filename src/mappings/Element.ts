@@ -12,4 +12,17 @@ const mappings = {
   Type__c: 'Type',
 };
 
-export default mappings;
+const mappingsStandard = {
+  IsActive: 'IsActive',
+  Description: 'Description',
+  Level: 'Level',
+  Name: 'Name',
+  OmniProcessId: 'OmniProcessId',
+  SequenceNumber: 'SequenceNumber',
+  ParentElementId: 'ParentElementId',
+  PropertySetConfig: 'PropertySetConfig',
+  EmbeddedOmniScriptKey: 'EmbeddedOmniScriptKey',
+  Type: 'Type',
+};
+
+export default { mappings, mappingsStandard };

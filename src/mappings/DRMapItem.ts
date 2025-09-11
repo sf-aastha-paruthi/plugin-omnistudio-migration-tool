@@ -38,4 +38,42 @@ const mappings = {
   GlobalKey__c: 'GlobalKey',
 };
 
-export default mappings;
+const mappingsStandard = {
+  MigrationAttribute: 'MigrationAttribute',
+  MigrationCategory: 'MigrationCategory',
+  MigrationGroup: 'MigrationGroup',
+  MigrationKey: 'MigrationKey',
+  MigrationPattern: 'MigrationPattern',
+  MigrationProcess: 'MigrationProcess',
+  MigrationType: 'MigrationType',
+  MigrationValue: 'MigrationValue',
+  DefaultValue: 'DefaultValue',
+  FilterDataType: 'FilterDataType',
+  OutputObjectName: 'OutputObjectName',
+  OutputCreationSequence: 'OutputCreationSequence',
+  OutputFieldName: 'OutputFieldName',
+  OutputFieldFormat: 'OutputFieldFormat',
+  FilterGroup: 'FilterGroup',
+  FilterOperator: 'FilterOperator',
+  FilterValue: 'FilterValue',
+  FormulaExpression: 'FormulaExpression',
+  FormulaConverted: 'FormulaConverted',
+  FormulaSequence: 'FormulaSequence',
+  FormulaResultPath: 'FormulaResultPath',
+  InputFieldName: 'InputFieldName',
+  InputObjectQuerySequence: 'InputObjectQuerySequence',
+  InputObjectName: 'InputObjectName',
+  IsDisabled: 'IsDisabled',
+  IsRequiredForUpsert: 'IsRequiredForUpsert',
+  LinkedFieldName: 'LinkedFieldName',
+  LinkedObjectSequence: 'LinkedObjectSequence',
+  LookupByFieldName: 'LookupByFieldName',
+  LookupObjectName: 'LookupObjectName',
+  LookupReturnedFieldName: 'LookupReturnedFieldName',
+  GlobalKey: 'GlobalKey',
+  Name: 'Name',
+  TransformValueMappings: 'TransformValueMappings',
+  IsUpsertKey: 'IsUpsertKey',
+};
+
+export default { mappings, mappingsStandard };

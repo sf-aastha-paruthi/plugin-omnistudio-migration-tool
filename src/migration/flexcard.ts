@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { AnyJson } from '@salesforce/ts-types';
-import CardMappings from '../mappings/VlocityCard';
+import CardMappingsExport from '../mappings/VlocityCard';
+const { mappings: CardMappings, mappingsStandard: CardMappingsStandard } = CardMappingsExport;
 import { DebugTimer, QueryTools, SortDirection } from '../utils';
 import { NetUtils } from '../utils/net';
 import { BaseMigrationTool } from './base';
@@ -30,6 +31,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   static readonly VERSION_PROP = 'Version__c';
   private readonly allVersions: boolean;
 
+  // Helper method to get the appropriate mapping based on data model
+  private getCardMappings(): any {
+    return ISUSECASE2 ? CardMappingsStandard : CardMappings;
+  }
+
   constructor(
     namespace: string,
     connection: Connection,
@@ -49,11 +55,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   getRecordName(record: string) {
     return this.allVersions
       ? `${record['Name']}_${
-          record[
-            ISUSECASE2
-              ? CardMappings[CardMigrationTool.VERSION_PROP]
-              : this.namespacePrefix + CardMigrationTool.VERSION_PROP
-          ]
+        record[
+          ISUSECASE2
+            ? this.getCardMappings()[CardMigrationTool.VERSION_PROP]
+            : this.namespacePrefix + CardMigrationTool.VERSION_PROP
+        ]
         }`
       : record['Name'];
   }
@@ -208,7 +214,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     const version =
       flexCard[
         ISUSECASE2
-          ? CardMappings[CardMigrationTool.VERSION_PROP]
+          ? this.getCardMappings()[CardMigrationTool.VERSION_PROP]
           : this.namespacePrefix + CardMigrationTool.VERSION_PROP
       ];
     const flexCardAssessmentInfo: FlexCardAssessmentInfo = {
@@ -248,7 +254,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     uniqueNames.add(cleanedName);
 
     // Check for author name changes
-    const originalAuthor = flexCard[ISUSECASE2 ? CardMappings['Author__c'] : this.namespacePrefix + 'Author__c'];
+    const originalAuthor = flexCard[ISUSECASE2 ? this.getCardMappings()['Author__c'] : this.namespacePrefix + 'Author__c'];
     if (originalAuthor) {
       const cleanedAuthor = this.cleanName(originalAuthor);
       if (cleanedAuthor !== originalAuthor) {
@@ -272,7 +278,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   private updateDependencies(flexCard, flexCardAssessmentInfo): void {
     let dataSource = JSON.parse(
-      flexCard[ISUSECASE2 ? CardMappings['Datasource__c'] : this.namespacePrefix + 'Datasource__c'] || '{}'
+      flexCard[ISUSECASE2 ? this.getCardMappings()['Datasource__c'] : this.namespacePrefix + 'Datasource__c'] || '{}'
     );
     // Handle both camelCase and lowercase variants
     if (dataSource?.dataSource) {
@@ -347,7 +353,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     // Check for Omniscript dependencies in the card's definition
     try {
       const definition = JSON.parse(
-        flexCard[ISUSECASE2 ? CardMappings['Definition__c'] : this.namespacePrefix + 'Definition__c'] || '{}'
+        flexCard[ISUSECASE2 ? this.getCardMappings()['Definition__c'] : this.namespacePrefix + 'Definition__c'] || '{}'
       );
       if (definition && definition.states) {
         for (const state of definition.states) {
@@ -417,7 +423,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     let childs = [];
 
     const definition = JSON.parse(
-      card[ISUSECASE2 ? CardMappings['Definition__c'] : this.namespacePrefix + 'Definition__c']
+      card[ISUSECASE2 ? this.getCardMappings()['Definition__c'] : this.namespacePrefix + 'Definition__c']
     );
     if (!definition) return childs;
 
@@ -693,7 +699,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       const sortFields = [
         { field: 'Name', direction: SortDirection.ASC },
         {
-          field: ISUSECASE2 ? CardMappings['Version__c'] : this.namespacePrefix + 'Version__c',
+          field: ISUSECASE2 ? this.getCardMappings()['Version__c'] : this.namespacePrefix + 'Version__c',
           direction: SortDirection.ASC,
         },
       ];
@@ -713,7 +719,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         throw err;
       });
     } else {
-      filters.set(ISUSECASE2 ? CardMappings['Active__c'] : this.namespacePrefix + 'Active__c', true);
+      filters.set(ISUSECASE2 ? this.getCardMappings()['Active__c'] : this.namespacePrefix + 'Active__c', true);
       return await QueryTools.queryWithFilter(
         this.connection,
         ISUSECASE2 ? '' : this.namespace,
@@ -769,7 +775,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (cardsUploadInfo.has(recordId)) {
       return;
     }
-    const isCardActive = card[ISUSECASE2 ? CardMappings['Active__c'] : `${this.namespacePrefix}Active__c`];
+    const isCardActive = card[ISUSECASE2 ? this.getCardMappings()['Active__c'] : `${this.namespacePrefix}Active__c`];
 
     try {
       const childCards = this.getChildCards(card);
@@ -829,7 +835,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         uploadResult.warnings = uploadResult.warnings || [];
         if (
           transformedCardAuthorName !==
-          card[ISUSECASE2 ? CardMappings['Author__c'] : this.namespacePrefix + 'Author__c']
+          card[ISUSECASE2 ? this.getCardMappings()['Author__c'] : this.namespacePrefix + 'Author__c']
         ) {
           uploadResult.warnings.unshift(
             this.messages.getMessage('cardAuthorNameChangeMessage', [transformedCardAuthorName])
@@ -856,7 +862,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           recordId,
           uploadResult.id,
           {
-            [CardMappings.Active__c]: isCardActive,
+            [this.getCardMappings().Active__c]: isCardActive,
           }
         );
 
@@ -993,7 +999,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   private updateChildCards(card: AnyJson): void {
     const definition = JSON.parse(
-      card[ISUSECASE2 ? CardMappings['Definition__c'] : this.namespacePrefix + 'Definition__c']
+      card[ISUSECASE2 ? this.getCardMappings()['Definition__c'] : this.namespacePrefix + 'Definition__c']
     );
     if (!definition) return;
 
@@ -1003,7 +1009,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       }
     }
 
-    card[ISUSECASE2 ? CardMappings['Definition__c'] : this.namespacePrefix + 'Definition__c'] =
+    card[ISUSECASE2 ? this.getCardMappings()['Definition__c'] : this.namespacePrefix + 'Definition__c'] =
       JSON.stringify(definition);
   }
 
@@ -1023,31 +1029,31 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     recordFields.forEach((recordField) => {
       const cleanFieldName = this.getCleanFieldName(recordField);
 
-      if (CardMappings.hasOwnProperty(cleanFieldName) && cleanFieldName !== 'IsChildCard__c') {
-        mappedObject[CardMappings[cleanFieldName]] = cardRecord[recordField];
+      if (this.getCardMappings().hasOwnProperty(cleanFieldName) && cleanFieldName !== 'IsChildCard__c') {
+        mappedObject[this.getCardMappings()[cleanFieldName]] = cardRecord[recordField];
 
         // Transform ParentId__c to ClonedFromOmniUiCardKey field from uploaded response map
         if (
           cleanFieldName === 'ParentID__c' &&
           cardsUploadInfo.has(
-            cardRecord[ISUSECASE2 ? CardMappings['ParentID__c'] : `${this.namespacePrefix}ParentID__c`]
+            cardRecord[ISUSECASE2 ? this.getCardMappings()['ParentID__c'] : `${this.namespacePrefix}ParentID__c`]
           )
         ) {
-          mappedObject[CardMappings[cleanFieldName]] = cardsUploadInfo.get(
-            cardRecord[ISUSECASE2 ? CardMappings['ParentID__c'] : `${this.namespacePrefix}ParentID__c`]
+          mappedObject[this.getCardMappings()[cleanFieldName]] = cardsUploadInfo.get(
+            cardRecord[ISUSECASE2 ? this.getCardMappings()['ParentID__c'] : `${this.namespacePrefix}ParentID__c`]
           ).id;
         }
 
         // CardType__c and OmniUiCardType have different picklist values
         if (cleanFieldName === 'CardType__c') {
           let ischildCard =
-            cardRecord[ISUSECASE2 ? CardMappings['IsChildCard__c'] : `${this.namespacePrefix}IsChildCard__c`];
+            cardRecord[ISUSECASE2 ? this.getCardMappings()['IsChildCard__c'] : `${this.namespacePrefix}IsChildCard__c`];
           mappedObject['OmniUiCardType'] = ischildCard ? 'Child' : 'Parent';
         }
 
         // Child Cards don't have version, so assigning 1
         if (cleanFieldName === 'Version__c') {
-          let versionNumber = cardRecord[ISUSECASE2 ? CardMappings['Version__c'] : `${this.namespacePrefix}Version__c`];
+          let versionNumber = cardRecord[ISUSECASE2 ? this.getCardMappings()['Version__c'] : `${this.namespacePrefix}Version__c`];
           mappedObject['VersionNumber'] = versionNumber ? versionNumber : 1;
         }
       }
@@ -1055,11 +1061,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
     // Clean the name
     mappedObject['Name'] = this.cleanName(mappedObject['Name']);
-    mappedObject[CardMappings.Author__c] = this.cleanName(mappedObject[CardMappings.Author__c]);
-    mappedObject[CardMappings.Active__c] = false;
+    mappedObject[this.getCardMappings().Author__c] = this.cleanName(mappedObject[this.getCardMappings().Author__c]);
+    mappedObject[this.getCardMappings().Active__c] = false;
 
     // Update the datasource
-    const datasource = JSON.parse(mappedObject[CardMappings.Datasource__c] || '{}');
+    const datasource = JSON.parse(mappedObject[this.getCardMappings().Datasource__c] || '{}');
     if (datasource.dataSource) {
       const type = datasource.dataSource.type;
       if (type === Constants.DataRaptorComponentName) {
@@ -1076,7 +1082,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           invalidIpNames.set('DataSource', ipMethod);
         }
       }
-      mappedObject[CardMappings.Datasource__c] = JSON.stringify(datasource);
+      mappedObject[this.getCardMappings().Datasource__c] = JSON.stringify(datasource);
     }
 
     // Update all dependencies comprehensively
@@ -1095,7 +1101,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
    */
   private updateAllDependenciesWithRegistry(mappedObject: any, invalidIpNames: Map<string, string>): void {
     // 1. Handle propertySet (Definition) datasource
-    const propertySet = JSON.parse(mappedObject[CardMappings.Definition__c] || '{}');
+    const propertySet = JSON.parse(mappedObject[this.getCardMappings().Definition__c] || '{}');
     if (propertySet) {
       // Use NameMappingRegistry to update all dependency references first
       const updatedPropertySet = this.nameRegistry.updateDependencyReferences(propertySet);
@@ -1141,7 +1147,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         }
       }
 
-      mappedObject[CardMappings.Definition__c] = JSON.stringify(updatedPropertySet);
+      mappedObject[this.getCardMappings().Definition__c] = JSON.stringify(updatedPropertySet);
     }
   }
 
@@ -1393,7 +1399,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   }
 
   private getCardFields(): string[] {
-    return ISUSECASE2 ? Object.values(CardMappings) : Object.keys(CardMappings);
+    return ISUSECASE2 ? Object.values(this.getCardMappings()) : Object.keys(this.getCardMappings());
   }
 
   /**
@@ -1402,7 +1408,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   private hasAngularOmniScriptDependencies(card: AnyJson): boolean {
     try {
       const definition = JSON.parse(
-        card[ISUSECASE2 ? CardMappings['Definition__c'] : this.namespacePrefix + 'Definition__c'] || '{}'
+        card[ISUSECASE2 ? this.getCardMappings()['Definition__c'] : this.namespacePrefix + 'Definition__c'] || '{}'
       );
       if (definition && definition.states) {
         for (const state of definition.states) {
