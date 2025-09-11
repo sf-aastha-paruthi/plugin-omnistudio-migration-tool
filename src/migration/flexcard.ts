@@ -55,11 +55,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   getRecordName(record: string) {
     return this.allVersions
       ? `${record['Name']}_${
-        record[
-          ISUSECASE2
-            ? this.getCardMappings()[CardMigrationTool.VERSION_PROP]
-            : this.namespacePrefix + CardMigrationTool.VERSION_PROP
-        ]
+          record[
+            ISUSECASE2
+              ? this.getCardMappings()[CardMigrationTool.VERSION_PROP]
+              : this.namespacePrefix + CardMigrationTool.VERSION_PROP
+          ]
         }`
       : record['Name'];
   }
@@ -254,7 +254,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     uniqueNames.add(cleanedName);
 
     // Check for author name changes
-    const originalAuthor = flexCard[ISUSECASE2 ? this.getCardMappings()['Author__c'] : this.namespacePrefix + 'Author__c'];
+    const originalAuthor =
+      flexCard[ISUSECASE2 ? this.getCardMappings()['Author__c'] : this.namespacePrefix + 'Author__c'];
     if (originalAuthor) {
       const cleanedAuthor = this.cleanName(originalAuthor);
       if (cleanedAuthor !== originalAuthor) {
@@ -1053,7 +1054,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
         // Child Cards don't have version, so assigning 1
         if (cleanFieldName === 'Version__c') {
-          let versionNumber = cardRecord[ISUSECASE2 ? this.getCardMappings()['Version__c'] : `${this.namespacePrefix}Version__c`];
+          let versionNumber =
+            cardRecord[ISUSECASE2 ? this.getCardMappings()['Version__c'] : `${this.namespacePrefix}Version__c`];
           mappedObject['VersionNumber'] = versionNumber ? versionNumber : 1;
         }
       }
