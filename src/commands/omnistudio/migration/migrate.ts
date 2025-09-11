@@ -33,6 +33,7 @@ import { PreMigrate } from '../../../migration/premigrate';
 import { GlobalAutoNumberMigrationTool } from '../../../migration/globalautonumber';
 import { ValidatorService } from '../../../utils/validatorService';
 import { NameMappingRegistry } from '../../../migration/NameMappingRegistry';
+import { ISUSECASE2 } from '../../../utils/constants/migrationConfig';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -168,18 +169,20 @@ export default class Migrate extends OmniStudioBaseCommand {
     // Migrate individual objects
     const debugTimer = DebugTimer.getInstance();
     // We need to truncate the standard objects first (in reverse order for cleanup)
-    let objectMigrationResults = await this.truncateObjects([...migrationObjects].reverse(), debugTimer);
-    const allTruncateComplete = objectMigrationResults.length === 0;
 
-    // Log truncation errors if any exist
-    if (!allTruncateComplete) {
-      this.logTruncationErrors(objectMigrationResults);
-      return;
+    let objectMigrationResults;
+    if (!ISUSECASE2) {
+      objectMigrationResults = await this.truncateObjects([...migrationObjects].reverse(), debugTimer);
+      const allTruncateComplete = objectMigrationResults.length === 0;
+
+      // Log truncation errors if any exist
+      if (!allTruncateComplete) {
+        this.logTruncationErrors(objectMigrationResults);
+        return;
+      }
     }
 
-    if (allTruncateComplete) {
-      objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer, namespace);
-    }
+    objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer, namespace);
 
     const omnistudioRelatedObjectsMigration = new OmnistudioRelatedObjectMigrationFacade(
       namespace,
@@ -656,7 +659,7 @@ export default class Migrate extends OmniStudioBaseCommand {
 
     for (const record of Array.from(migrationResults.records.values())) {
       const obj: MigratedRecordInfo = {
-        id: record['Id'],
+        id: record?.['Id'],
         name: migrationTool.getRecordName(record),
         status: 'Skipped',
         errors: record['errors'],

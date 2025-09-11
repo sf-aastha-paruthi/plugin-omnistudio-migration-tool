@@ -62,11 +62,11 @@ class NetUtils {
     recordId: string,
     data: any
   ): Promise<UploadRecordResult> {
+    // RecordId is coming as undefined
     try {
       const url = 'sobjects/' + objectName + '/' + recordId;
 
       await this.request<UploadRecordResult>(connection, url, data, RequestMethod.PATCH);
-
       return {
         referenceId,
         hasErrors: false,
