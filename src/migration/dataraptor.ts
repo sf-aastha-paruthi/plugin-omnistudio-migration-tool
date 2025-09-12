@@ -72,7 +72,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const dataRaptorItemsData = await this.getAllItems();
 
     // Query all the functionMetadata with all required fields
-    const functionDefinitionMetadata = await getAllFunctionMetadata(this.getQueryNamespace(), this.connection);
+    const functionDefinitionMetadata = await getAllFunctionMetadata(this.namespace, this.connection);
     populateRegexForFunctionMetadata(functionDefinitionMetadata);
     // Start transforming each dataRaptor
     DebugTimer.getInstance().lap('Transform Data Raptor');
@@ -258,7 +258,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const dataRaptorAssessmentInfos: DataRaptorAssessmentInfo[] = [];
     // Query all the functionMetadata with all required fields
 
-    const functionDefinitionMetadata = await getAllFunctionMetadata(this.getQueryNamespace(), this.connection);
+    const functionDefinitionMetadata = await getAllFunctionMetadata(this.namespace, this.connection);
     populateRegexForFunctionMetadata(functionDefinitionMetadata);
 
     const existingDataRaptorNames = new Set<string>();

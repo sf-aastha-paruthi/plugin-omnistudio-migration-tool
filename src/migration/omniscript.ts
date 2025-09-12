@@ -1197,7 +1197,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       ];
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
-        this.namespace,
+        this.getQueryNamespace(),
         this.getOmniscriptObjectName(),
         this.getOmniScriptFields(),
         filters,
