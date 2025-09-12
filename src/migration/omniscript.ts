@@ -1412,15 +1412,15 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       ];
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
-        '',
-        OmniScriptMigrationTool.OMNIPROCESS_NAME,
-        this.getOmniProcessFields(),
+        this.getQueryNamespace(),
+        this.getSourceOmniScriptObjectName(),
+        this.getOmniScriptFields(),
         filters,
         sortFields
       ).catch((err) => {
         if (err.errorCode === 'INVALID_TYPE') {
           throw new InvalidEntityTypeError(
-            `${OmniScriptMigrationTool.OMNIPROCESS_NAME} type is not found under this namespace`
+            `${this.getSourceOmniScriptObjectName()} type is not found under this namespace`
           );
         }
         throw err;
@@ -1429,14 +1429,14 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       filters.set(this.getOmniScriptMappings()['IsActive__c'], true);
       return await QueryTools.queryWithFilter(
         this.connection,
-        '',
-        OmniScriptMigrationTool.OMNIPROCESS_NAME,
-        this.getOmniProcessFields(),
+        this.getQueryNamespace(),
+        this.getSourceOmniScriptObjectName(),
+        this.getOmniScriptFields(),
         filters
       ).catch((err) => {
         if (err.errorCode === 'INVALID_TYPE') {
           throw new InvalidEntityTypeError(
-            `${OmniScriptMigrationTool.OMNIPROCESS_NAME} type is not found under this namespace`
+            `${this.getSourceOmniScriptObjectName()} type is not found under this namespace`
           );
         }
         throw err;
@@ -2075,10 +2075,6 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   private getOmniScriptFields(): string[] {
     return ISUSECASE2 ? Object.values(this.getOmniScriptMappings()) : Object.keys(this.getOmniScriptMappings());
-  }
-
-  private getOmniProcessFields(): string[] {
-    return Object.keys(OmniProcessMappings);
   }
 
   private getElementFields(): string[] {
