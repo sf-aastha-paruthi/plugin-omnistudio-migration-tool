@@ -24,4 +24,4 @@ const mappings = {
   Version__c: 'VersionNumber',
 };
 
-export default {mappings};
+export default mappings;
