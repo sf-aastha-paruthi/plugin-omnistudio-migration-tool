@@ -15,7 +15,11 @@ import {
 } from './interfaces';
 import { DataRaptorAssessmentInfo } from '../../src/utils';
 
-import { getReplacedString } from '../utils/formula/FormulaUtil';
+import {
+  getAllFunctionMetadata,
+  getReplacedString,
+  populateRegexForFunctionMetadata,
+} from '../utils/formula/FormulaUtil';
 import { StringVal } from '../utils/StringValue/stringval';
 import { Logger } from '../utils/logger';
 import { createProgressBar } from './base';
@@ -57,7 +61,6 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     return [await this.MigrateDataRaptorData()];
   }
 
-  // TODO - NEED TO UNDERSTAND IN DETAIL WHAT THIS IS DOING
   private async MigrateDataRaptorData(): Promise<MigrationResult> {
     let originalDrRecords = new Map<string, any>();
     let drUploadInfo = new Map<string, UploadRecordResult>();
@@ -69,10 +72,9 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const dataRaptorItemsData = await this.getAllItems();
 
     // Query all the functionMetadata with all required fields
-    // const functionDefinitionMetadata = await getAllFunctionMetadata(ISUSECASE2 ? '' : this.namespace, this.connection);
-    // populateRegexForFunctionMetadata(functionDefinitionMetadata);
+    const functionDefinitionMetadata = await getAllFunctionMetadata(this.getQueryNamespace(), this.connection);
+    populateRegexForFunctionMetadata(functionDefinitionMetadata);
     // Start transforming each dataRaptor
-    const functionDefinitionMetadata: AnyJson = [];
     DebugTimer.getInstance().lap('Transform Data Raptor');
 
     if (functionDefinitionMetadata.length > 0 && dataRaptorItemsData.length > 0) {
@@ -111,12 +113,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
 
       const typeKey = dr[this.getBundleFieldKey('Type__c')];
       const outputTypeKey = dr[this.getBundleFieldKey('OutputType__c')];
-      const targetOutputDocumentIdentifier =
-        dr[
-          ISUSECASE2
-            ? DRBundleMappings['TargetOutDocuSignTemplateId__c']
-            : this.namespacePrefix + 'TargetOutDocuSignTemplateId__c'
-        ];
+      const targetOutputDocumentIdentifier = dr[this.getBundleFieldKey('TargetOutDocuSignTemplateId__c')];
       const targetOutputFileName = dr[this.getBundleFieldKey('TargetOutPdfDocName__c')];
 
       if (typeKey === null) {
@@ -260,12 +257,10 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
   public async processDRComponents(dataRaptors: AnyJson[]): Promise<DataRaptorAssessmentInfo[]> {
     const dataRaptorAssessmentInfos: DataRaptorAssessmentInfo[] = [];
     // Query all the functionMetadata with all required fields
-    // TODO CHECK - NEED TO SEE WHAT THIS WILL MAP TO IN STANDARD ENTITIES
 
-    // const functionDefinitionMetadata = await getAllFunctionMetadata(ISUSECASE2 ? '' : this.namespace, this.connection);
-    // populateRegexForFunctionMetadata(functionDefinitionMetadata);
+    const functionDefinitionMetadata = await getAllFunctionMetadata(this.getQueryNamespace(), this.connection);
+    populateRegexForFunctionMetadata(functionDefinitionMetadata);
 
-    const functionDefinitionMetadata = [];
     const existingDataRaptorNames = new Set<string>();
     const dataRaptorItemsMap = await this.getAllDRToItemsMap();
 
@@ -395,7 +390,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     //DebugTimer.getInstance().lap('Query DRBundle');
     return await QueryTools.queryAll(
       this.connection,
-      ISUSECASE2 ? '' : this.namespace,
+      this.getQueryNamespace(),
       ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME,
       this.getDRBundleFields()
     ).catch((err) => {
@@ -415,7 +410,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     //Query all Elements
     return await QueryTools.queryAll(
       this.connection,
-      ISUSECASE2 ? '' : this.namespace,
+      this.getQueryNamespace(),
       ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME : DataRaptorMigrationTool.DRMAPITEM_NAME,
       this.getDRMapItemFields()
     ).catch((err) => {
@@ -550,5 +545,9 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
 
   private getItemFieldKey(fieldName: string): string {
     return ISUSECASE2 ? DRMapItemMappings[fieldName] : this.namespacePrefix + fieldName;
+  }
+
+  private getQueryNamespace(): string {
+    return this.getQueryNamespace();
   }
 }

@@ -679,7 +679,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       ];
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
-        ISUSECASE2 ? '' : this.namespace,
+        this.getQueryNamespace(),
         ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME,
         this.getCardFields(),
         filters,
@@ -696,7 +696,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       filters.set(this.getFieldKey('Active__c'), true);
       return await QueryTools.queryWithFilter(
         this.connection,
-        ISUSECASE2 ? '' : this.namespace,
+        this.getQueryNamespace(),
         ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME,
         this.getCardFields(),
         filters
@@ -1366,6 +1366,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   private getFieldKey(fieldName: string): string {
     return ISUSECASE2 ? CardMappings[fieldName] : this.namespacePrefix + fieldName;
+  }
+
+  private getQueryNamespace(): string {
+    return ISUSECASE2 ? '' : this.namespace;
   }
 
   /**

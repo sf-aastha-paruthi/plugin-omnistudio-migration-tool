@@ -1292,7 +1292,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     // const queryFilterStr = ` Where ${this.namespacePrefix}OmniScriptId__c = '${omniScriptData.keys().next().value}'`;
     return await QueryTools.queryWithFilter(
       this.connection,
-      ISUSECASE2 ? '' : this.namespace,
+      this.getQueryNamespace(),
       ISUSECASE2 ? OmniScriptMigrationTool.OMNIPROCESSELEMENT_NAME : OmniScriptMigrationTool.ELEMENT_NAME,
       this.getElementFields(),
       filters
@@ -1938,6 +1938,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   private getFieldKey(fieldName: string): string {
     return ISUSECASE2 ? OmniScriptMappings[fieldName] : this.namespacePrefix + fieldName;
+  }
+
+  private getQueryNamespace(): string {
+    return ISUSECASE2 ? '' : this.namespace;
   }
 
   private sleep() {
