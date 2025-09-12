@@ -1179,30 +1179,26 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   // Get All OmniScript__c records i.e All IP & OS
   private async getAllOmniScripts(): Promise<AnyJson[]> {
-    if (ISUSECASE2) {
-      return await this.getAllOmniProcess();
-    }
-
     //DebugTimer.getInstance().lap('Query OmniScripts');
     Logger.info(this.messages.getMessage('allVersionsInfo', [this.allVersions]));
     const filters = new Map<string, any>();
 
     if (this.exportType === OmniScriptExportType.IP) {
-      filters.set(this.namespacePrefix + 'IsProcedure__c', true);
+      filters.set(this.getFieldKey('IsProcedure__c'), true);
     } else if (this.exportType === OmniScriptExportType.OS) {
-      filters.set(this.namespacePrefix + 'IsProcedure__c', false);
+      filters.set(this.getFieldKey('IsProcedure__c'), false);
     }
 
     if (this.allVersions) {
       const sortFields = [
-        { field: this.namespacePrefix + 'Type__c', direction: SortDirection.ASC },
-        { field: this.namespacePrefix + 'SubType__c', direction: SortDirection.ASC },
-        { field: this.namespacePrefix + 'Version__c', direction: SortDirection.ASC },
+        { field: this.getFieldKey('Type__c'), direction: SortDirection.ASC },
+        { field: this.getFieldKey('SubType__c'), direction: SortDirection.ASC },
+        { field: this.getFieldKey('Version__c'), direction: SortDirection.ASC },
       ];
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
         this.namespace,
-        OmniScriptMigrationTool.OMNISCRIPT_NAME,
+        this.getOmniscriptObjectName(),
         this.getOmniScriptFields(),
         filters,
         sortFields
@@ -1218,15 +1214,13 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       filters.set(this.namespacePrefix + 'IsActive__c', true);
       return await QueryTools.queryWithFilter(
         this.connection,
-        this.namespace,
-        OmniScriptMigrationTool.OMNISCRIPT_NAME,
+        this.getQueryNamespace(),
+        this.getOmniscriptObjectName(),
         this.getOmniScriptFields(),
         filters
       ).catch((err) => {
         if (err.errorCode === 'INVALID_TYPE') {
-          throw new InvalidEntityTypeError(
-            `${OmniScriptMigrationTool.OMNISCRIPT_NAME} type is not found under this namespace`
-          );
+          throw new InvalidEntityTypeError(`${this.getOmniscriptObjectName()} type is not found under this namespace`);
         }
         throw err;
       });
@@ -1255,13 +1249,15 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
   private async getOmniScriptCompiledDefinition(recordId: string): Promise<AnyJson[]> {
     // Query all Definitions for an OmniScript
     const filters = new Map<string, any>();
-    filters.set(this.namespacePrefix + 'OmniScriptId__c', recordId);
+    ISUSECASE2
+      ? filters.set('OmniProcessId', recordId)
+      : filters.set(this.namespacePrefix + 'OmniScriptId__c', recordId);
 
     // const queryFilterStr = ` Where ${this.namespacePrefix}OmniScriptId__c = '${omniScriptData.keys().next().value}'`;
     return await QueryTools.queryWithFilter(
       this.connection,
-      this.namespace,
-      OmniScriptMigrationTool.OMNISCRIPTDEFINITION_NAME,
+      this.getQueryNamespace(),
+      this.getOmniScriptCompiledDefinitionObjectName(),
       this.getOmniScriptDefinitionFields(),
       filters
     );
@@ -1848,15 +1844,21 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
   }
 
   private getOmniScriptFields(): string[] {
-    return Object.keys(OmniScriptMappings);
+    return ISUSECASE2 ? Object.values(OmniScriptMappings) : Object.keys(OmniScriptMappings);
   }
 
   private getElementFields(): string[] {
     return ISUSECASE2 ? Object.values(ElementMappings) : Object.keys(ElementMappings);
   }
 
+  private getOmniScriptCompiledDefinitionObjectName(): string {
+    return ISUSECASE2
+      ? OmniScriptMigrationTool.OMNIPROCESSCOMPILATION_NAME
+      : OmniScriptMigrationTool.OMNISCRIPTDEFINITION_NAME;
+  }
+
   private getOmniScriptDefinitionFields(): string[] {
-    return Object.keys(OmniScriptDefinitionMappings);
+    return ISUSECASE2 ? Object.values(OmniScriptDefinitionMappings) : Object.keys(OmniScriptDefinitionMappings);
   }
 
   /**
@@ -1894,6 +1896,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   private getQueryNamespace(): string {
     return ISUSECASE2 ? '' : this.namespace;
+  }
+
+  getOmniscriptObjectName(): string {
+    return ISUSECASE2 ? OmniScriptMigrationTool.OMNIPROCESS_NAME : OmniScriptMigrationTool.OMNISCRIPT_NAME;
   }
 
   private getElementObjectName(): string {
