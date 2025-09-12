@@ -43,7 +43,6 @@ export class QueryTools {
   ): Promise<AnyJson[]> {
     let allrecords = [];
 
-    // TODO HERE FLOW COMING FROM DATARAPTOR
     const query = QueryTools.buildCustomObjectQuery(namespace, objectName, fields);
 
     // Execute the query

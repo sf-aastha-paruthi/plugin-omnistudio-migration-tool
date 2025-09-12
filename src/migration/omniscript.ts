@@ -1945,7 +1945,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
   }
 
   private getElementObjectName(): string {
-    return this.getElementObjectName();
+    return ISUSECASE2 ? OmniScriptMigrationTool.OMNIPROCESSELEMENT_NAME : OmniScriptMigrationTool.ELEMENT_NAME;
   }
 
   private sleep() {

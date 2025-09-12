@@ -1369,7 +1369,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   }
 
   private getCardObjectName(): string {
-    return this.getCardObjectName();
+    return ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME;
   }
 
   /**

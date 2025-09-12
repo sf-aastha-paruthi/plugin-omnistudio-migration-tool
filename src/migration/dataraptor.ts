@@ -548,10 +548,10 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
   }
 
   private getBundleObjectName(): string {
-    return this.getBundleObjectName();
+    return ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME;
   }
 
   private getItemObjectName(): string {
-    return this.getItemObjectName();
+    return ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME : DataRaptorMigrationTool.DRMAPITEM_NAME;
   }
 }
