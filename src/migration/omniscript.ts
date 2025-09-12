@@ -609,7 +609,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       const nameMapping: OmniscriptNameMapping = {
         oldType: existingType,
         oldSubtype: existingSubType,
-        oldLanguage: omniscript[this.namespacePrefix + 'Language__c'],
+        oldLanguage: omniscript[this.getFieldKey('Language__c')],
         newType: newType,
         newSubType: newSubType,
         newLanguage: newLanguage,
@@ -980,20 +980,20 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         let originalOsName: string;
         if (this.allVersions) {
           originalOsName =
-            omniscript[this.namespacePrefix + 'Type__c'] +
+            omniscript[this.getFieldKey('Type__c')] +
             '_' +
-            omniscript[this.namespacePrefix + 'SubType__c'] +
+            omniscript[this.getFieldKey('SubType__c')] +
             '_' +
-            omniscript[this.namespacePrefix + 'Language__c'] +
+            omniscript[this.getFieldKey('Language__c')] +
             '_' +
-            (omniscript[this.namespacePrefix + 'Version__c'] || '1');
+            (omniscript[this.getFieldKey('Version__c')] || '1');
         } else {
           originalOsName =
-            omniscript[this.namespacePrefix + 'Type__c'] +
+            omniscript[this.getFieldKey('Type__c')] +
             '_' +
-            omniscript[this.namespacePrefix + 'SubType__c'] +
+            omniscript[this.getFieldKey('SubType__c')] +
             '_' +
-            omniscript[this.namespacePrefix + 'Language__c'] +
+            omniscript[this.getFieldKey('Language__c')] +
             '_1';
         }
         // Always set the new name to show the migrated name
@@ -1108,8 +1108,8 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     let resultMap: Map<string, any> = new Map<string, any>();
     for (let record of Array.from(records.values())) {
       if (
-        (type === 'Integration Procedures' && record[`${this.namespacePrefix}IsProcedure__c`]) ||
-        (type === 'Omniscripts' && !record[`${this.namespacePrefix}IsProcedure__c`])
+        (type === 'Integration Procedures' && record[this.getFieldKey('IsProcedure__c')]) ||
+        (type === 'Omniscripts' && !record[this.getFieldKey('IsProcedure__c')])
       ) {
         recordMap.set(record['Id'], records.get(record['Id']));
         if (results.get(record['Id'])) {
@@ -1135,7 +1135,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         let oldrecord = originalOsRecords.get(key);
         let newrecord = osUploadInfo.get(key);
 
-        if (!oldrecord[`${this.namespacePrefix}IsProcedure__c`]) {
+        if (!oldrecord[this.getFieldKey('IsProcedure__c')]) {
           let value: OmniScriptStorage = {
             type: newrecord['type'],
             subtype: newrecord['subtype'],
@@ -1155,9 +1155,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
             }
           }
 
-          let finalKey = `${oldrecord[this.namespacePrefix + 'Type__c']}${
-            oldrecord[this.namespacePrefix + 'SubType__c']
-          }${this.cleanLanguageName(oldrecord[this.namespacePrefix + 'Language__c'])}`;
+          let finalKey = `${oldrecord[this.getFieldKey('Type__c')]}${
+            oldrecord[this.getFieldKey('SubType__c')]
+          }${this.cleanLanguageName(oldrecord[this.getFieldKey('Language__c')])}`;
 
           finalKey = finalKey.toLowerCase();
           if (storage.osStorage.has(finalKey)) {
@@ -1211,7 +1211,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         throw err;
       });
     } else {
-      filters.set(this.namespacePrefix + 'IsActive__c', true);
+      filters.set(this.getFieldKey('IsActive__c'), true);
       return await QueryTools.queryWithFilter(
         this.connection,
         this.getQueryNamespace(),
@@ -1275,9 +1275,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     do {
       let tempElements = []; // Stores Elements at a same level starting with levelCount = 0 level (parent elements)
       for (let element of elements) {
-        if (element[`${this.namespacePrefix}Level__c`] === levelCount) {
+        if (element[this.getFieldKey('Level__c')] === levelCount) {
           let elementId = element['Id'];
-          let elementParentId = element[`${this.namespacePrefix}ParentElementId__c`];
+          let elementParentId = element[this.getFieldKey['ParentElementId__c']];
           if (
             !elementsUploadInfo.has(elementId) &&
             (!elementParentId || (elementParentId && elementsUploadInfo.has(elementParentId)))

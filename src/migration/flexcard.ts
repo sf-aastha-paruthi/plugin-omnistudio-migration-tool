@@ -1357,7 +1357,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   }
 
   private getCardFields(): string[] {
-    return ISUSECASE2 ? Object.values(CardMappings) : Object.keys(CardMappings);
+    return ISUSECASE2 ? Object.values(CardMappings).filter((value) => value !== '') : Object.keys(CardMappings);
   }
 
   private getFieldKey(fieldName: string): string {

@@ -33,6 +33,7 @@ import { PreMigrate } from '../../../migration/premigrate';
 import { GlobalAutoNumberMigrationTool } from '../../../migration/globalautonumber';
 import { ValidatorService } from '../../../utils/validatorService';
 import { NameMappingRegistry } from '../../../migration/NameMappingRegistry';
+import { ISUSECASE2 } from '../../../utils/constants/migrationConfig';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -172,14 +173,12 @@ export default class Migrate extends OmniStudioBaseCommand {
     const allTruncateComplete = objectMigrationResults.length === 0;
 
     // Log truncation errors if any exist
-    if (!allTruncateComplete) {
+    if (!ISUSECASE2 && !allTruncateComplete) {
       this.logTruncationErrors(objectMigrationResults);
       return;
     }
 
-    if (allTruncateComplete) {
-      objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer, namespace);
-    }
+    objectMigrationResults = await this.migrateObjects(migrationObjects, debugTimer, namespace);
 
     const omnistudioRelatedObjectsMigration = new OmnistudioRelatedObjectMigrationFacade(
       namespace,
@@ -339,6 +338,10 @@ export default class Migrate extends OmniStudioBaseCommand {
   }
 
   private async truncateObjects(migrationObjects: MigrationTool[], debugTimer: DebugTimer): Promise<MigratedObject[]> {
+    if (ISUSECASE2) {
+      return;
+    }
+
     const objectMigrationResults: MigratedObject[] = [];
     // Truncate in reverse order (highest dependencies first) - this is correct for cleanup
     for (const cls of migrationObjects) {
