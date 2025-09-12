@@ -194,7 +194,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       if (drUploadResponse && drUploadResponse.success === true) {
         const items = await this.getItemsForDataRaptor(dataRaptorItemsData, name, drUploadResponse.id);
 
-        drUploadResponse.newName = transformedDataRaptor[this.getBundleFieldKey('Name')];
+        drUploadResponse.newName = transformedDataRaptor[DRBundleMappings.Name];
 
         // Move the items
         await this.uploadTransformedData(DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME, items);
@@ -228,7 +228,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     const drToItemsMap = new Map<string, AnyJson[]>();
     const drItems = await this.getAllItems();
     for (const drItem of drItems) {
-      const drName = drItem[this.getItemFieldKey('Name')];
+      const drName = drItem['Name'];
       if (drToItemsMap.has(drName)) {
         drToItemsMap.get(drName).push(drItem);
       } else {
@@ -284,7 +284,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
         dataRaptorAssessmentInfos.push(dataRaptorAssessmentInfo);
       } catch (e) {
         dataRaptorAssessmentInfos.push({
-          oldName: dataRaptor[this.getBundleFieldKey('Name')],
+          oldName: dataRaptor['Name'],
           name: '',
           id: dataRaptor['Id'],
           type: dataRaptor[this.getBundleFieldKey('Type__c')] || '',
@@ -310,7 +310,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     dataRaptorItemsMap: Map<string, AnyJson[]>,
     functionDefinitionMetadata: AnyJson[]
   ): Promise<DataRaptorAssessmentInfo> {
-    const drName = dataRaptor[this.getBundleFieldKey('Name')];
+    const drName = dataRaptor['Name'];
     // Await here since processOSComponents is now async
     Logger.info(this.messages.getMessage('processingDataRaptor', [drName]));
     const warnings: string[] = [];
@@ -440,9 +440,9 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       originalRecords = new Map<string, AnyJson>();
 
     dataRaptorItems.forEach((drItem) => {
-      const recordId = drItem[this.getItemFieldKey('Id')];
+      const recordId = drItem['Id'];
       // const itemParentId = drItem[nsPrefix + 'OmniDataTransformationId__c']
-      if (drItem[this.getItemFieldKey('Name')] === drName) {
+      if (drItem['Name'] === drName) {
         mappedRecords.push(this.mapDataRaptorItemData(drItem, drId));
       }
 
@@ -474,13 +474,13 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
       }
     });
 
-    mappedObject['Name'] = this.cleanName(mappedObject[this.getBundleFieldKey('Name')]);
+    mappedObject['Name'] = this.cleanName(mappedObject['Name']);
     mappedObject['IsActive'] = true;
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
       type: DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME,
-      referenceId: dataRaptorRecord[this.getBundleFieldKey('Id')],
+      referenceId: dataRaptorRecord['Id'],
     };
 
     return mappedObject;
@@ -509,19 +509,17 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
 
     // Set the parent/child relationship
     mappedObject['OmniDataTransformationId'] = omniDataTransformationId;
-    mappedObject['Name'] = this.cleanName(mappedObject[this.getItemFieldKey('Name')]);
+    mappedObject['Name'] = this.cleanName(mappedObject['Name']);
 
     // Update formula field references if NameMappingRegistry is available
-    if (this.nameRegistry && mappedObject[this.getItemFieldKey('Formula__c')]) {
-      mappedObject[this.getItemFieldKey('Formula__c')] = this.nameRegistry.updateDependencyReferences(
-        mappedObject[this.getItemFieldKey('Formula__c')]
-      );
+    if (this.nameRegistry && mappedObject['Formula']) {
+      mappedObject['Formula'] = this.nameRegistry.updateDependencyReferences(mappedObject['Formula']);
     }
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
       type: DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME,
-      referenceId: dataRaptorItemRecord[this.getItemFieldKey('Id')],
+      referenceId: dataRaptorItemRecord['Id'],
     };
 
     return mappedObject;
