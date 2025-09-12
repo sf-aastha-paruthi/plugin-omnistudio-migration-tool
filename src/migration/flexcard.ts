@@ -680,7 +680,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       return await QueryTools.queryWithFilterAndSort(
         this.connection,
         this.getQueryNamespace(),
-        ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME,
+        this.getCardObjectName(),
         this.getCardFields(),
         filters,
         sortFields
@@ -697,16 +697,12 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       return await QueryTools.queryWithFilter(
         this.connection,
         this.getQueryNamespace(),
-        ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME,
+        this.getCardObjectName(),
         this.getCardFields(),
         filters
       ).catch((err) => {
         if (err.errorCode === 'INVALID_TYPE') {
-          throw new InvalidEntityTypeError(
-            `${
-              ISUSECASE2 ? CardMigrationTool.OMNIUICARD_NAME : CardMigrationTool.VLOCITYCARD_NAME
-            } type is not found under this namespace`
-          );
+          throw new InvalidEntityTypeError(`${this.getCardObjectName()} type is not found under this namespace`);
         }
         throw err;
       });
@@ -1370,6 +1366,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
   private getQueryNamespace(): string {
     return ISUSECASE2 ? '' : this.namespace;
+  }
+
+  private getCardObjectName(): string {
+    return this.getCardObjectName();
   }
 
   /**

@@ -391,15 +391,11 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     return await QueryTools.queryAll(
       this.connection,
       this.getQueryNamespace(),
-      ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME,
+      this.getBundleObjectName(),
       this.getDRBundleFields()
     ).catch((err) => {
       if (err.errorCode === 'INVALID_TYPE') {
-        throw new InvalidEntityTypeError(
-          `${
-            ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORM_NAME : DataRaptorMigrationTool.DRBUNDLE_NAME
-          } type is not found under this namespace`
-        );
+        throw new InvalidEntityTypeError(`${this.getBundleObjectName()} type is not found under this namespace`);
       }
       throw err;
     });
@@ -411,7 +407,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
     return await QueryTools.queryAll(
       this.connection,
       this.getQueryNamespace(),
-      ISUSECASE2 ? DataRaptorMigrationTool.OMNIDATATRANSFORMITEM_NAME : DataRaptorMigrationTool.DRMAPITEM_NAME,
+      this.getItemObjectName(),
       this.getDRMapItemFields()
     ).catch((err) => {
       Logger.error('Error querying data raptor items', err);
@@ -548,6 +544,14 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
   }
 
   private getQueryNamespace(): string {
-    return this.getQueryNamespace();
+    return ISUSECASE2 ? '' : this.namespace;
+  }
+
+  private getBundleObjectName(): string {
+    return this.getBundleObjectName();
+  }
+
+  private getItemObjectName(): string {
+    return this.getItemObjectName();
   }
 }

@@ -1293,7 +1293,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     return await QueryTools.queryWithFilter(
       this.connection,
       this.getQueryNamespace(),
-      ISUSECASE2 ? OmniScriptMigrationTool.OMNIPROCESSELEMENT_NAME : OmniScriptMigrationTool.ELEMENT_NAME,
+      this.getElementObjectName(),
       this.getElementFields(),
       filters
     );
@@ -1942,6 +1942,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
   private getQueryNamespace(): string {
     return ISUSECASE2 ? '' : this.namespace;
+  }
+
+  private getElementObjectName(): string {
+    return this.getElementObjectName();
   }
 
   private sleep() {
