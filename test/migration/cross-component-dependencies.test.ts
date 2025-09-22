@@ -1,6 +1,8 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any, camelcase */
 import { expect } from 'chai';
 import { NameMappingRegistry } from '../../src/migration/NameMappingRegistry';
+import { OmnistudioOrgDetails } from '../../src/utils/orgUtils';
+import { initializeDataModelService } from '../../src/utils/dataModelService';
 
 /**
  * Integration tests for cross-component dependency updates across all OmniStudio components
@@ -12,6 +14,17 @@ describe('Cross-Component Dependency Updates Integration Tests', () => {
   beforeEach(() => {
     nameRegistry = NameMappingRegistry.getInstance();
     nameRegistry.clear();
+
+    // Initialize data model service for tests (set to custom data model)
+    const mockOrgDetails: OmnistudioOrgDetails = {
+      packageDetails: { version: '1.0.0', namespace: 'vlocity_ins' },
+      omniStudioOrgPermissionEnabled: false, // This makes IS_STANDARD_DATA_MODEL = false
+      orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
+      dataModel: 'Custom',
+      hasValidNamespace: true,
+    };
+    initializeDataModelService(mockOrgDetails);
+
     setupCompleteNameMappings();
   });
 
