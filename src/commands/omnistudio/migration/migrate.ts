@@ -613,7 +613,7 @@ export default class Migrate extends OmniStudioBaseCommand {
   private async queryFlexCards(conn: any, namespace: string): Promise<any[]> {
     let query;
     if (isStandardDataModel()) {
-      query = "SELECT Id, Name FROM OmniUiCard WHERE IsActive = true";
+      query = 'SELECT Id, Name FROM OmniUiCard WHERE IsActive = true';
     } else {
       query = `SELECT Id, Name FROM ${namespace}__VlocityCard__c WHERE ${namespace}__CardType__c = 'flex' AND ${namespace}__Active__c = true`;
     }
