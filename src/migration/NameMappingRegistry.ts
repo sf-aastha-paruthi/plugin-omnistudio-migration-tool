@@ -5,6 +5,7 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import { isStandardDataModel } from '../utils/dataModelService';
 import { Stringutil } from '../utils/StringValue/stringutil';
 
 export interface ComponentNameMapping {
@@ -40,9 +41,7 @@ export class NameMappingRegistry {
 
   // Track Angular OmniScripts that should be skipped (Type_SubType_Language format)
   private angularOmniScriptRefs: Set<string> = new Set();
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() {}
+  private IS_STANDARD_DATA_MODEL = isStandardDataModel();
 
   public static getInstance(): NameMappingRegistry {
     if (!NameMappingRegistry.instance) {
@@ -279,6 +278,24 @@ export class NameMappingRegistry {
     flexCards: any[]
   ): void {
     // Register DataMapper mappings
+    this.registerDataMappersMapping(dataMappers);
+    this.registerLwcOmniscriptsMapping(lwcOmniScripts);
+    this.registerAngularOmniscriptsMapping(angularOmniScripts);
+    this.registerIntegrationProceduresMapping(integrationProcedures);
+    this.registerFlexcardsMapping(flexCards);
+  }
+
+  /**
+   * Update all dependency references with cleaned names
+   */
+  public updateDependencyReferences<T>(componentDefinition: T): T {
+    // This will be called for each component to update its dependencies
+    // Implementation depends on the specific structure of each component type
+    return this.updateObjectReferences(componentDefinition) as T;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerDataMappersMapping(dataMappers: any[]): void {
     for (const dr of dataMappers) {
       this.registerNameMapping({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
@@ -290,15 +307,23 @@ export class NameMappingRegistry {
         recordId: dr.Id,
       });
     }
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerLwcOmniscriptsMapping(lwcOmniScripts: any[]): void {
     // Register OmniScript mappings
     for (const os of lwcOmniScripts) {
       // Extract namespace from field names (e.g., vlocity_ins__Type__c -> vlocity_ins)
-      const fieldNames = Object.keys(os);
-      const typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
-      const subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
-      const languageField = fieldNames.find((field) => field.endsWith('__Language__c')) || 'Language__c';
+      let typeField = 'Type';
+      let subTypeField = 'SubType';
+      let languageField = 'Language';
 
+      if (!this.IS_STANDARD_DATA_MODEL) {
+        const fieldNames = Object.keys(os);
+        typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
+        subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
+        languageField = fieldNames.find((field) => field.endsWith('__Language__c')) || 'Language__c';
+      }
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const type = os[typeField];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
@@ -319,14 +344,23 @@ export class NameMappingRegistry {
         recordId: os.Id,
       });
     }
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerAngularOmniscriptsMapping(angularOmniScripts: any[]): void {
     // Register Angular OmniScript references (to be skipped during migration)
     for (const angularOs of angularOmniScripts) {
       // Extract namespace from field names (e.g., vlocity_ins__Type__c -> vlocity_ins)
-      const fieldNames = Object.keys(angularOs);
-      const typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
-      const subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
-      const languageField = fieldNames.find((field) => field.endsWith('__Language__c')) || 'Language__c';
+      let typeField = 'Type';
+      let subTypeField = 'SubType';
+      let languageField = 'Language';
+
+      if (!this.IS_STANDARD_DATA_MODEL) {
+        const fieldNames = Object.keys(angularOs);
+        typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
+        subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
+        languageField = fieldNames.find((field) => field.endsWith('__Language__c')) || 'Language__c';
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const type = angularOs[typeField];
@@ -339,13 +373,21 @@ export class NameMappingRegistry {
       const angularRef = `${type}_${subType}_${language}`;
       this.registerAngularOmniScript(angularRef);
     }
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerIntegrationProceduresMapping(integrationProcedures: any[]): void {
     // Register Integration Procedure mappings
     for (const ip of integrationProcedures) {
-      // Extract namespace from field names (e.g., vlocity_ins__Type__c -> vlocity_ins)
-      const fieldNames = Object.keys(ip);
-      const typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
-      const subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
+      let typeField = 'Type';
+      let subTypeField = 'SubType';
+
+      if (!this.IS_STANDARD_DATA_MODEL) {
+        // Extract namespace from field names (e.g., vlocity_ins__Type__c -> vlocity_ins)
+        const fieldNames = Object.keys(ip);
+        typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
+        subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const type = ip[typeField];
@@ -366,7 +408,10 @@ export class NameMappingRegistry {
         recordId: ip.Id,
       });
     }
+  }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerFlexcardsMapping(flexCards: any[]): void {
     // Register FlexCard mappings
     for (const fc of flexCards) {
       this.registerNameMapping({
@@ -379,15 +424,6 @@ export class NameMappingRegistry {
         recordId: fc.Id,
       });
     }
-  }
-
-  /**
-   * Update all dependency references with cleaned names
-   */
-  public updateDependencyReferences<T>(componentDefinition: T): T {
-    // This will be called for each component to update its dependencies
-    // Implementation depends on the specific structure of each component type
-    return this.updateObjectReferences(componentDefinition) as T;
   }
 
   /**
