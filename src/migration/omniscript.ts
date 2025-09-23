@@ -1293,7 +1293,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       for (let element of elements) {
         if (element[this.getElementFieldKey('Level__c')] === levelCount) {
           let elementId = element['Id'];
-          let elementParentId = element[this.getElementFieldKey('ParentElementId__c')];
+          let elementParentId = element[this.getElementFieldKey['ParentElementId__c']];
           if (
             !elementsUploadInfo.has(elementId) &&
             (!elementParentId || (elementParentId && elementsUploadInfo.has(elementParentId)))
