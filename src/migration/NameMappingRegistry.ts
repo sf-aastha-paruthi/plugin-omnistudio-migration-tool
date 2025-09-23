@@ -41,7 +41,6 @@ export class NameMappingRegistry {
 
   // Track Angular OmniScripts that should be skipped (Type_SubType_Language format)
   private angularOmniScriptRefs: Set<string> = new Set();
-  private IS_STANDARD_DATA_MODEL = isStandardDataModel();
 
   public static getInstance(): NameMappingRegistry {
     if (!NameMappingRegistry.instance) {
@@ -150,8 +149,9 @@ export class NameMappingRegistry {
   public getOmniScriptCleanedName(type: string, subType: string, language: string | 'English'): string {
     const originalName = `${type}_${subType}_${language}`;
     // Check if we have a mapping for this OmniScript first
-    if (this.omniScriptMappings.has(originalName)) {
-      return this.omniScriptMappings.get(originalName)!;
+    const mappedName = this.omniScriptMappings.get(originalName);
+    if (mappedName) {
+      return mappedName;
     }
     // Fallback to cleaning individual parts
     const cleanedType = Stringutil.cleanName(type);
@@ -318,7 +318,7 @@ export class NameMappingRegistry {
       let subTypeField = 'SubType';
       let languageField = 'Language';
 
-      if (!this.IS_STANDARD_DATA_MODEL) {
+      if (!isStandardDataModel()) {
         const fieldNames = Object.keys(os);
         typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
         subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
@@ -355,7 +355,7 @@ export class NameMappingRegistry {
       let subTypeField = 'SubType';
       let languageField = 'Language';
 
-      if (!this.IS_STANDARD_DATA_MODEL) {
+      if (!isStandardDataModel()) {
         const fieldNames = Object.keys(angularOs);
         typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';
         subTypeField = fieldNames.find((field) => field.endsWith('__SubType__c')) || 'SubType__c';
@@ -382,7 +382,7 @@ export class NameMappingRegistry {
       let typeField = 'Type';
       let subTypeField = 'SubType';
 
-      if (!this.IS_STANDARD_DATA_MODEL) {
+      if (!isStandardDataModel()) {
         // Extract namespace from field names (e.g., vlocity_ins__Type__c -> vlocity_ins)
         const fieldNames = Object.keys(ip);
         typeField = fieldNames.find((field) => field.endsWith('__Type__c')) || 'Type__c';

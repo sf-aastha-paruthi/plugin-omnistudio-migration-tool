@@ -1,11 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, camelcase, comma-dangle */
 import { expect } from 'chai';
 import { NameMappingRegistry, ComponentNameMapping } from '../../src/migration/NameMappingRegistry';
+import { initializeDataModelService } from '../../src/utils/dataModelService';
+import { OmnistudioOrgDetails } from '../../src/utils/orgUtils';
 
 describe('NameMappingRegistry', () => {
   let registry: NameMappingRegistry;
 
   beforeEach(() => {
+    // Initialize data model service for tests (set to custom data model)
+    const mockOrgDetails: OmnistudioOrgDetails = {
+      packageDetails: { version: '1.0.0', namespace: 'vlocity_ins' },
+      omniStudioOrgPermissionEnabled: false, // This makes IS_STANDARD_DATA_MODEL = false
+      orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
+      dataModel: 'Custom',
+      hasValidNamespace: true,
+    };
+    initializeDataModelService(mockOrgDetails);
+
     registry = NameMappingRegistry.getInstance();
     registry.clear();
   });
