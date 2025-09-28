@@ -1,3 +1,4 @@
+import { isStandardDataModel } from '../dataModelService';
 import { IPAssessmentInfo } from '../interfaces';
 import { Logger } from '../logger';
 import { OmnistudioOrgDetails } from '../orgUtils';
@@ -151,66 +152,32 @@ export class IPAssessmentReporter {
   }
 
   private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
-    return [
-      {
-        header: [
-          {
-            name: 'Managed Package',
-            colspan: 2,
-            rowspan: 1,
-          },
-          {
-            name: 'Standard',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'Assessment Status',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Summary',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Integration Procedure Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Data Mapper Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Remote Action Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-        ],
-      },
-      {
-        header: [
-          {
-            name: 'Name',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'ID',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'Name',
-            colspan: 1,
-            rowspan: 1,
-          },
-        ],
-      },
+    const firstRowHeaders = [
+      ...this.getNameHeaders(),
+      { name: 'Assessment Status', colspan: 1, rowspan: 2 },
+      { name: 'Summary', colspan: 1, rowspan: 2 },
+      { name: 'Integration Procedure Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Data Mapper Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Remote Action Dependencies', colspan: 1, rowspan: 2 },
     ];
+    const secondRowHeaders = [
+      { name: 'Name', colspan: 1, rowspan: 1 },
+      { name: 'ID', colspan: 1, rowspan: 1 },
+      { name: 'Name', colspan: 1, rowspan: 1 },
+    ];
+
+    return [{ header: firstRowHeaders }, { header: secondRowHeaders }];
+  }
+
+  private static getNameHeaders(): Array<{ name: string; colspan: number; rowspan: number }> {
+    if (isStandardDataModel()) {
+      return [{ name: 'Standard', colspan: 3, rowspan: 1 }];
+    } else {
+      return [
+        { name: 'Managed Package', colspan: 2, rowspan: 1 },
+        { name: 'Standard', colspan: 1, rowspan: 1 },
+      ];
+    }
   }
 
   private static getFilterGroupsForReport(ipAssessmentInfo: IPAssessmentInfo[]): FilterGroupParam[] {
