@@ -25,6 +25,7 @@ import {
   DashboardParam,
   FilterGroupParam,
   ReportDataParam,
+  ReportHeaderGroupParam,
 } from '../reportGenerator/reportInterfaces';
 import { OmnistudioOrgDetails } from '../orgUtils';
 import { TemplateParser } from '../templateParser/generate';
@@ -33,6 +34,7 @@ import { FileDiffUtil } from '../lwcparser/fileutils/FileDiffUtil';
 import { Logger } from '../logger';
 import { getMigrationHeading } from '../stringUtils';
 import { Constants } from '../constants/stringContants';
+import { isStandardDataModel } from '../dataModelService';
 import { CustomLabelMigrationInfo, CustomLabelMigrationReporter } from './CustomLabelMigrationReporter';
 
 const resultsDir = path.join(process.cwd(), Constants.MigrationReportsFolderName);
@@ -129,61 +131,7 @@ export class ResultsBuilder {
       assessmentDate: new Date().toLocaleString(),
       total: result.data?.length || 0,
       filterGroups: [...this.getStatusFilterGroup(result.data?.map((item) => item.status) || [])],
-      headerGroups: [
-        {
-          header: [
-            {
-              name: 'Managed Package',
-              colspan: 2,
-              rowspan: 1,
-            },
-            {
-              name: 'Standard',
-              colspan: 2,
-              rowspan: 1,
-            },
-            {
-              name: 'Status',
-              colspan: 1,
-              rowspan: 2,
-            },
-            {
-              name: 'Errors',
-              colspan: 1,
-              rowspan: 2,
-            },
-            {
-              name: 'Summary',
-              colspan: 1,
-              rowspan: 2,
-            },
-          ],
-        },
-        {
-          header: [
-            {
-              name: 'ID',
-              colspan: 1,
-              rowspan: 1,
-            },
-            {
-              name: 'Name',
-              colspan: 1,
-              rowspan: 1,
-            },
-            {
-              name: 'ID',
-              colspan: 1,
-              rowspan: 1,
-            },
-            {
-              name: 'Name',
-              colspan: 1,
-              rowspan: 1,
-            },
-          ],
-        },
-      ],
+      headerGroups: [...this.getHeaderGroupsForReport(componentName)],
       rows: [
         ...(result.data || []).map((item) => ({
           rowId: `${this.rowClass}${this.rowId++}`,
@@ -232,6 +180,39 @@ export class ResultsBuilder {
     const reportTemplate = fs.readFileSync(reportTemplateFilePath, 'utf8');
     const html = TemplateParser.generate(reportTemplate, data, messages);
     fs.writeFileSync(path.join(resultsDir, result.name.replace(/ /g, '_').replace(/\//g, '_') + '.html'), html);
+  }
+
+  private static getHeaderGroupsForReport(componentName: string): ReportHeaderGroupParam[] {
+    const firstRowHeaders = [
+      ...this.getNameHeaders(componentName),
+      { name: 'Status', colspan: 1, rowspan: 2 },
+      { name: 'Errors', colspan: 1, rowspan: 2 },
+      { name: 'Summary', colspan: 1, rowspan: 2 },
+    ];
+
+    const secondRowHeaders = [
+      { name: 'ID', colspan: 1, rowspan: 1 },
+      { name: 'Name', colspan: 1, rowspan: 1 },
+      { name: 'ID', colspan: 1, rowspan: 1 },
+      { name: 'Name', colspan: 1, rowspan: 1 },
+    ];
+    return [{ header: firstRowHeaders }, { header: secondRowHeaders }];
+  }
+
+  private static getNameHeaders(componentName: string): Array<{ name: string; colspan: number; rowspan: number }> {
+    let isGlobalAutoNumber = false;
+    if (componentName.includes('global auto number') || componentName.includes('globalautonumber')) {
+      isGlobalAutoNumber = true;
+    }
+
+    if (isStandardDataModel() && !isGlobalAutoNumber) {
+      return [{ name: 'Standard', colspan: 4, rowspan: 1 }];
+    } else {
+      return [
+        { name: 'Managed Package', colspan: 2, rowspan: 1 },
+        { name: 'Standard', colspan: 2, rowspan: 1 },
+      ];
+    }
   }
 
   private static generateCustomLabelsMigrationReport(
