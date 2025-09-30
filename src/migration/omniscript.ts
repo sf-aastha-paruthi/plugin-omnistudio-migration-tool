@@ -1293,7 +1293,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       for (let element of elements) {
         if (element[this.getElementFieldKey('Level__c')] === levelCount) {
           let elementId = element['Id'];
-          let elementParentId = element[this.getElementFieldKey['ParentElementId__c']];
+          let elementParentId = element[this.getElementFieldKey('ParentElementId__c')];
           if (
             !elementsUploadInfo.has(elementId) &&
             (!elementParentId || (elementParentId && elementsUploadInfo.has(elementParentId)))
@@ -1338,10 +1338,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
             elementRecord['Id'] = standardElementId;
             elementRecord['OmniProcessId'] = standardOmniProcessId;
-            elementsUploadResponse[standardElementId] = response;
+            elementsUploadResponse.set(standardElementId, response);
           }
         }
-
         // Keep appending upload Info for Elements at each level
         elementsUploadInfo = new Map([
           ...Array.from(elementsUploadInfo.entries()),

@@ -1,3 +1,4 @@
+import OmniScriptMappings from '../mappings/OmniScript';
 import { OmnistudioOrgDetails } from './orgUtils';
 import { Constants } from './constants/stringContants';
 
@@ -50,4 +51,9 @@ export function isStandardDataModel(): boolean {
 export function isCustomDataModel(): boolean {
   const dataModel = getDataModelInfo();
   return dataModel === Constants.CustomDataModel;
+}
+
+export function getFieldKeyForOmniscript(namespacePrefix: string, fieldName: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+  return isStandardDataModel() ? OmniScriptMappings[fieldName] : namespacePrefix + '__' + fieldName;
 }

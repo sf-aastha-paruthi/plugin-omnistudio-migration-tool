@@ -4,6 +4,7 @@ import { OmniScriptMigrationTool, OmniScriptExportType } from '../../src/migrati
 import { NameMappingRegistry } from '../../src/migration/NameMappingRegistry';
 import { initializeDataModelService } from '../../src/utils/dataModelService';
 import { OmnistudioOrgDetails } from '../../src/utils/orgUtils';
+import { NetUtils } from '../../src/utils/net';
 
 describe('OmniScript Standard Data Model (Metadata API Disabled) - Assessment and Migration', () => {
   let omniScriptTool: OmniScriptMigrationTool;
@@ -565,6 +566,246 @@ describe('OmniScript Standard Data Model (Metadata API Disabled) - Assessment an
     });
   });
 
+  describe('Standard Data Model - Multi-Level Element Hierarchy Processing', () => {
+    it('should properly handle hierarchical elements with parent-child relationships in standard data model', async () => {
+      // This test specifically catches the Map[property] vs Map.set() bug in uploadAllElements
+      const mockElements = [
+        // Level 0: Root Step element
+        {
+          Id: 'step001',
+          Name: 'CustomerInfoStep',
+          Type: 'Step',
+          PropertySetConfig: JSON.stringify({
+            label: 'Customer Information',
+          }),
+          Level: 0,
+          ParentElementId: null,
+          OmniProcessId: 'op123',
+        },
+        // Level 1: Integration Procedure child of Step
+        {
+          Id: 'ip001',
+          Name: 'GetCustomerData',
+          Type: 'Integration Procedure Action',
+          PropertySetConfig: JSON.stringify({
+            integrationProcedureKey: 'API-Gateway_Customer@Info!',
+            timeout: 30,
+          }),
+          Level: 1,
+          ParentElementId: 'step001',
+          OmniProcessId: 'op123',
+        },
+        // Level 1: DataRaptor child of Step
+        {
+          Id: 'dr001',
+          Name: 'TransformCustomerData',
+          Type: 'DataRaptor Transform Action',
+          PropertySetConfig: JSON.stringify({
+            bundle: 'Customer-Data@Loader!',
+            inputType: 'JSON',
+          }),
+          Level: 1,
+          ParentElementId: 'step001',
+          OmniProcessId: 'op123',
+        },
+        // Level 0: Another root element (Text)
+        {
+          Id: 'text001',
+          Name: 'CustomerNameInput',
+          Type: 'Text',
+          PropertySetConfig: JSON.stringify({
+            label: 'Customer Name',
+            required: true,
+          }),
+          Level: 0,
+          ParentElementId: null,
+          OmniProcessId: 'op123',
+        },
+        // Level 1: Child of Text element
+        {
+          Id: 'validate001',
+          Name: 'ValidateCustomerName',
+          Type: 'Formula',
+          PropertySetConfig: JSON.stringify({
+            formula: 'LENGTH({CustomerName}) > 2',
+          }),
+          Level: 1,
+          ParentElementId: 'text001',
+          OmniProcessId: 'op123',
+        },
+        // Level 2: Grandchild element (child of Integration Procedure)
+        {
+          Id: 'nested001',
+          Name: 'NestedValidation',
+          Type: 'Messaging Framework',
+          PropertySetConfig: JSON.stringify({
+            message: 'Validating customer data...',
+          }),
+          Level: 2,
+          ParentElementId: 'ip001',
+          OmniProcessId: 'op123',
+        },
+      ];
+
+      const mockUploadResult = {
+        id: 'op123',
+        success: true,
+        referenceId: 'originalId',
+        hasErrors: false,
+        errors: [],
+        warnings: [],
+        newName: 'TestOmniProcess',
+        skipped: false,
+      };
+
+      // Mock NetUtils.updateOne to simulate successful updates for standard data model
+      const mockUpdateResponses = new Map([
+        [
+          'step001',
+          { id: 'step001', success: true, referenceId: 'step001', hasErrors: false, errors: [], warnings: [] },
+        ],
+        ['ip001', { id: 'ip001', success: true, referenceId: 'ip001', hasErrors: false, errors: [], warnings: [] }],
+        ['dr001', { id: 'dr001', success: true, referenceId: 'dr001', hasErrors: false, errors: [], warnings: [] }],
+        [
+          'text001',
+          { id: 'text001', success: true, referenceId: 'text001', hasErrors: false, errors: [], warnings: [] },
+        ],
+        [
+          'validate001',
+          { id: 'validate001', success: true, referenceId: 'validate001', hasErrors: false, errors: [], warnings: [] },
+        ],
+        [
+          'nested001',
+          { id: 'nested001', success: true, referenceId: 'nested001', hasErrors: false, errors: [], warnings: [] },
+        ],
+      ]);
+
+      // Mock NetUtils.updateOne method
+      const originalUpdateOne = NetUtils.updateOne.bind(NetUtils);
+      NetUtils.updateOne = async (connection, objectName, referenceId, recordId) => {
+        return (
+          mockUpdateResponses.get(recordId) || {
+            success: false,
+            errors: ['Mock update failed'],
+            referenceId,
+            hasErrors: true,
+            warnings: [],
+          }
+        );
+      };
+
+      try {
+        // Call uploadAllElements directly to test the hierarchical processing
+        const result = await (omniScriptTool as any).uploadAllElements(mockUploadResult, mockElements);
+
+        // Verify that ALL elements were processed and stored correctly
+        expect(result).to.be.instanceOf(Map);
+        expect(result.size).to.equal(6, 'Should have processed all 6 elements');
+
+        // Verify each element was processed at the correct level
+        // Level 0 elements should be processed first
+        expect(result.has('step001')).to.be.true;
+        expect(result.has('text001')).to.be.true;
+
+        // Level 1 elements should be processed after their parents
+        expect(result.has('ip001')).to.be.true;
+        expect(result.has('dr001')).to.be.true;
+        expect(result.has('validate001')).to.be.true;
+
+        // Level 2 elements should be processed last
+        expect(result.has('nested001')).to.be.true;
+
+        // Verify the responses are correct UploadRecordResult objects
+        const stepResult = result.get('step001');
+        expect(stepResult.success).to.be.true;
+        expect(stepResult.id).to.equal('step001');
+
+        const ipResult = result.get('ip001');
+        expect(ipResult.success).to.be.true;
+        expect(ipResult.id).to.equal('ip001');
+
+        const nestedResult = result.get('nested001');
+        expect(nestedResult.success).to.be.true;
+        expect(nestedResult.id).to.equal('nested001');
+
+        // This test would FAIL with the original bug because:
+        // elementsUploadResponse[standardElementId] = response would add properties to the Map object
+        // but Array.from(elementsUploadResponse.entries()) would return empty array
+        // so elementsUploadInfo would only contain elements from previous levels, not current level
+      } finally {
+        // Restore original method
+        NetUtils.updateOne = originalUpdateOne;
+      }
+    });
+
+    it('should handle dependency mapping in hierarchical elements for standard data model', () => {
+      const mockElements = [
+        // Parent Step with nested dependencies
+        {
+          Id: 'step002',
+          Name: 'ProcessingStep',
+          Type: 'Step',
+          PropertySetConfig: JSON.stringify({
+            label: 'Data Processing Step',
+          }),
+          Level: 0,
+          ParentElementId: null,
+          OmniProcessId: 'op124',
+        },
+        // Child IP Action with special character dependencies
+        {
+          Id: 'ip002',
+          Name: 'CustomerProcessing',
+          Type: 'Integration Procedure Action',
+          PropertySetConfig: JSON.stringify({
+            integrationProcedureKey: 'API-Gateway_Customer@Info!',
+            preTransformBundle: 'Customer-Data@Loader!',
+            postTransformBundle: 'Product#Info$Extractor',
+            remoteOptions: {
+              preTransformBundle: 'Customer-Data@Loader!',
+              postTransformBundle: 'Product#Info$Extractor',
+            },
+          }),
+          Level: 1,
+          ParentElementId: 'step002',
+          OmniProcessId: 'op124',
+        },
+        // Child DR Action
+        {
+          Id: 'dr002',
+          Name: 'DataExtraction',
+          Type: 'DataRaptor Extract Action',
+          PropertySetConfig: JSON.stringify({
+            bundle: 'Customer-Data@Loader!',
+          }),
+          Level: 1,
+          ParentElementId: 'step002',
+          OmniProcessId: 'op124',
+        },
+      ];
+
+      // Test element mapping with dependencies
+      const ipResult = (omniScriptTool as any).mapElementData(mockElements[1], 'op124', new Map(), new Map());
+      const drResult = (omniScriptTool as any).mapElementData(mockElements[2], 'op124', new Map(), new Map());
+
+      // Verify IP Action dependency mapping
+      const ipPropertySet = JSON.parse(ipResult.PropertySetConfig);
+      expect(ipPropertySet.integrationProcedureKey).to.equal('APIGateway_CustomerInfo');
+      expect(ipPropertySet.preTransformBundle).to.equal('CustomerDataLoader');
+      expect(ipPropertySet.postTransformBundle).to.equal('ProductInfoExtractor');
+      expect(ipPropertySet.remoteOptions.preTransformBundle).to.equal('CustomerDataLoader');
+      expect(ipPropertySet.remoteOptions.postTransformBundle).to.equal('ProductInfoExtractor');
+
+      // Verify DR Action dependency mapping
+      const drPropertySet = JSON.parse(drResult.PropertySetConfig);
+      expect(drPropertySet.bundle).to.equal('CustomerDataLoader');
+
+      // Verify OmniProcessId is set correctly for standard data model
+      expect(ipResult.OmniProcessId).to.equal('op124');
+      expect(drResult.OmniProcessId).to.equal('op124');
+    });
+  });
+
   describe('Standard Data Model - Error Scenarios and Edge Cases', () => {
     it('should handle empty or null dependency references', () => {
       const mockElementRecord = {
@@ -584,6 +825,56 @@ describe('OmniScript Standard Data Model (Metadata API Disabled) - Assessment an
       const propertySet = JSON.parse(result.PropertySetConfig);
       expect(propertySet.integrationProcedureKey).to.equal('');
       expect(propertySet.preTransformBundle).to.equal(null);
+    });
+
+    it('should handle element processing failure in hierarchical structure', async () => {
+      const mockElements = [
+        {
+          Id: 'step003',
+          Name: 'FailingStep',
+          Type: 'Step',
+          PropertySetConfig: JSON.stringify({}),
+          Level: 0,
+          ParentElementId: null,
+          OmniProcessId: 'op125',
+        },
+      ];
+
+      const mockUploadResult = {
+        id: 'op125',
+        success: true,
+        referenceId: 'originalId',
+        hasErrors: false,
+        errors: [],
+        warnings: [],
+        newName: 'TestFailingProcess',
+        skipped: false,
+      };
+
+      // Mock NetUtils.updateOne to simulate failure
+      const originalUpdateOne = NetUtils.updateOne.bind(NetUtils);
+      NetUtils.updateOne = async (connection, objectName, referenceId) => ({
+        success: false,
+        errors: ['Simulated update failure'],
+        hasErrors: true,
+        referenceId,
+        warnings: [],
+      });
+
+      try {
+        const result = await (omniScriptTool as any).uploadAllElements(mockUploadResult, mockElements);
+
+        // Should still return a Map even if updates fail
+        expect(result).to.be.instanceOf(Map);
+        expect(result.size).to.equal(1);
+
+        const failedResult = result.get('step003');
+        expect(failedResult.success).to.be.false;
+        expect(failedResult.errors).to.include('Simulated update failure');
+      } finally {
+        // Restore original method
+        NetUtils.updateOne = originalUpdateOne;
+      }
     });
   });
 });

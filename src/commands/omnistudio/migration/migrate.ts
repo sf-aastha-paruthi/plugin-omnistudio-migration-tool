@@ -31,10 +31,13 @@ import { YES_SHORT, YES_LONG, NO_SHORT, NO_LONG } from '../../../utils/projectPa
 import { PostMigrate } from '../../../migration/postMigrate';
 import { PreMigrate } from '../../../migration/premigrate';
 import { GlobalAutoNumberMigrationTool } from '../../../migration/globalautonumber';
-import { initializeDataModelService, isStandardDataModel } from '../../../utils/dataModelService';
+import {
+  getFieldKeyForOmniscript,
+  initializeDataModelService,
+  isStandardDataModel,
+} from '../../../utils/dataModelService';
 import { NameMappingRegistry } from '../../../migration/NameMappingRegistry';
 import { ValidatorService } from '../../../utils/validatorService';
-import OmniScriptMappings from '../../../mappings/OmniScript';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -596,7 +599,7 @@ export default class Migrate extends OmniStudioBaseCommand {
     const angular: any[] = [];
 
     for (const omniscript of omniscripts) {
-      const isLwcEnabled = omniscript[this.getFieldKeyForOmniscript(namespace, 'IsLwcEnabled__c')];
+      const isLwcEnabled = omniscript[getFieldKeyForOmniscript(namespace, 'IsLwcEnabled__c')];
       if (isLwcEnabled) {
         lwc.push(omniscript);
       } else {
@@ -731,10 +734,5 @@ export default class Migrate extends OmniStudioBaseCommand {
         Logger.error(messages.getMessage('truncationFailed', [result.name, result.errors.join(', ')]));
       }
     });
-  }
-
-  private getFieldKeyForOmniscript(namespacePrefix: string, fieldName: string): string {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-    return isStandardDataModel() ? OmniScriptMappings[fieldName] : namespacePrefix + '__' + fieldName;
   }
 }
