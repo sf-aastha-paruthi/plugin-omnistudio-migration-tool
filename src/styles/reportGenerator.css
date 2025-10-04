@@ -124,130 +124,79 @@
   text-align: center;
 }
 
-/* ===== STANDARD DATA MODEL - Freeze 3 columns (Name, ID, Name) ===== */
-.table-container[data-model='Standard'] .slds-table thead tr:first-child th:first-child {
+/* ===== FROZEN COLUMNS - Shared styles ===== */
+/* Common styles for all frozen columns */
+.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child,
+.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child,
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:first-child,
+.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:first-child,
+.table-container[data-model='standard' i] .slds-table tbody tr td:first-child,
+.table-container[data-model='custom' i] .slds-table tbody tr td:first-child {
   position: sticky !important;
   left: 0 !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  border-left: 1px solid #e5e5e5 !important;
+}
+
+.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child,
+.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child,
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:first-child,
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(3),
+.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:first-child,
+.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:nth-child(2) {
   z-index: 20 !important;
   background-color: #f3f3f3 !important;
+}
+
+.table-container[data-model='standard' i] .slds-table tbody tr td:first-child,
+.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(2),
+.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(3),
+.table-container[data-model='custom' i] .slds-table tbody tr td:first-child,
+.table-container[data-model='custom' i] .slds-table tbody tr td:nth-child(2) {
+  z-index: 10 !important;
+  background-color: #fff !important;
+}
+
+/* Standard model - 3 columns */
+.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child {
   width: 600px !important;
   min-width: 600px !important;
   max-width: 600px !important;
-  border-left: 1px solid #e5e5e5 !important;
 }
 
-.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:nth-child(2) {
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
+.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(2) {
   position: sticky !important;
   left: 200px !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
   width: 200px !important;
   min-width: 200px !important;
   max-width: 200px !important;
 }
 
-.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:nth-child(3) {
+.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(3),
+.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(3) {
   position: sticky !important;
   left: 400px !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
   width: 200px !important;
   min-width: 200px !important;
   max-width: 200px !important;
   border-right: 1px solid #e5e5e5 !important;
 }
 
-.table-container[data-model='Standard'] .slds-table tbody tr td:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 10 !important;
-  background-color: #fff !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-left: 1px solid #e5e5e5 !important;
-}
-
-.table-container[data-model='Standard'] .slds-table tbody tr td:nth-child(2) {
-  position: sticky !important;
-  left: 200px !important;
-  z-index: 10 !important;
-  background-color: #fff !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-.table-container[data-model='Standard'] .slds-table tbody tr td:nth-child(3) {
-  position: sticky !important;
-  left: 400px !important;
-  z-index: 10 !important;
-  background-color: #fff !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-right: 1px solid #e5e5e5 !important;
-}
-
-/* ===== CUSTOM DATA MODEL - Freeze 2 columns (Name, ID under Managed Package) ===== */
-.table-container[data-model='Custom'] .slds-table thead tr:first-child th:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
+/* Custom model - 2 columns */
+.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child {
   width: 400px !important;
   min-width: 400px !important;
   max-width: 400px !important;
-  border-left: 1px solid #e5e5e5 !important;
 }
 
-.table-container[data-model='Custom'] .slds-table thead tr:nth-child(2) th:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-.table-container[data-model='Custom'] .slds-table thead tr:nth-child(2) th:nth-child(2) {
+.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
+.table-container[data-model='custom' i] .slds-table tbody tr td:nth-child(2) {
   position: sticky !important;
   left: 200px !important;
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-right: 1px solid #e5e5e5 !important;
-}
-
-.table-container[data-model='Custom'] .slds-table tbody tr td:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 10 !important;
-  background-color: #fff !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-left: 1px solid #e5e5e5 !important;
-}
-
-.table-container[data-model='Custom'] .slds-table tbody tr td:nth-child(2) {
-  position: sticky !important;
-  left: 200px !important;
-  z-index: 10 !important;
-  background-color: #fff !important;
   width: 200px !important;
   min-width: 200px !important;
   max-width: 200px !important;
