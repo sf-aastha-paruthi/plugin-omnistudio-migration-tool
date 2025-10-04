@@ -124,9 +124,8 @@
   text-align: center;
 }
 
-/* Freeze first 3 columns (Name, ID, Name under Standard header) */
-/* First row - Standard header spanning 3 columns */
-.slds-table thead tr:first-child th:first-child {
+/* ===== STANDARD DATA MODEL - Freeze 3 columns (Name, ID, Name) ===== */
+.table-container[data-model='Standard'] .slds-table thead tr:first-child th:first-child {
   position: sticky !important;
   left: 0 !important;
   z-index: 20 !important;
@@ -134,10 +133,10 @@
   width: 600px !important;
   min-width: 600px !important;
   max-width: 600px !important;
+  border-left: 1px solid #e5e5e5 !important;
 }
 
-/* Second row - Name column */
-.slds-table thead tr:nth-child(2) th:first-child {
+.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:first-child {
   position: sticky !important;
   left: 0 !important;
   z-index: 20 !important;
@@ -147,8 +146,7 @@
   max-width: 200px !important;
 }
 
-/* Second row - ID column */
-.slds-table thead tr:nth-child(2) th:nth-child(2) {
+.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:nth-child(2) {
   position: sticky !important;
   left: 200px !important;
   z-index: 20 !important;
@@ -158,8 +156,7 @@
   max-width: 200px !important;
 }
 
-/* Second row - Name column */
-.slds-table thead tr:nth-child(2) th:nth-child(3) {
+.table-container[data-model='Standard'] .slds-table thead tr:nth-child(2) th:nth-child(3) {
   position: sticky !important;
   left: 400px !important;
   z-index: 20 !important;
@@ -170,8 +167,7 @@
   border-right: 1px solid #e5e5e5 !important;
 }
 
-/* Body - First column */
-.slds-table tbody tr td:first-child {
+.table-container[data-model='Standard'] .slds-table tbody tr td:first-child {
   position: sticky !important;
   left: 0 !important;
   z-index: 10 !important;
@@ -179,10 +175,10 @@
   width: 200px !important;
   min-width: 200px !important;
   max-width: 200px !important;
+  border-left: 1px solid #e5e5e5 !important;
 }
 
-/* Body - Second column */
-.slds-table tbody tr td:nth-child(2) {
+.table-container[data-model='Standard'] .slds-table tbody tr td:nth-child(2) {
   position: sticky !important;
   left: 200px !important;
   z-index: 10 !important;
@@ -192,8 +188,7 @@
   max-width: 200px !important;
 }
 
-/* Body - Third column */
-.slds-table tbody tr td:nth-child(3) {
+.table-container[data-model='Standard'] .slds-table tbody tr td:nth-child(3) {
   position: sticky !important;
   left: 400px !important;
   z-index: 10 !important;
@@ -204,13 +199,59 @@
   border-right: 1px solid #e5e5e5 !important;
 }
 
-/* Remove border-left from 4th column to avoid double border */
-.slds-table tbody tr td:nth-child(4) {
-  border-left: none !important;
+/* ===== CUSTOM DATA MODEL - Freeze 2 columns (Name, ID under Managed Package) ===== */
+.table-container[data-model='Custom'] .slds-table thead tr:first-child th:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 20 !important;
+  background-color: #f3f3f3 !important;
+  width: 400px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  border-left: 1px solid #e5e5e5 !important;
 }
 
-.slds-table thead tr:nth-child(2) th:nth-child(4) {
-  border-left: none !important;
+.table-container[data-model='Custom'] .slds-table thead tr:nth-child(2) th:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 20 !important;
+  background-color: #f3f3f3 !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+}
+
+.table-container[data-model='Custom'] .slds-table thead tr:nth-child(2) th:nth-child(2) {
+  position: sticky !important;
+  left: 200px !important;
+  z-index: 20 !important;
+  background-color: #f3f3f3 !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  border-right: 1px solid #e5e5e5 !important;
+}
+
+.table-container[data-model='Custom'] .slds-table tbody tr td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 10 !important;
+  background-color: #fff !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  border-left: 1px solid #e5e5e5 !important;
+}
+
+.table-container[data-model='Custom'] .slds-table tbody tr td:nth-child(2) {
+  position: sticky !important;
+  left: 200px !important;
+  z-index: 10 !important;
+  background-color: #fff !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  border-right: 1px solid #e5e5e5 !important;
 }
 
 .slds-table--bordered,
@@ -526,7 +567,6 @@ hr {
 }
 
 td {
-  border-left: 1px solid #e5e5e5;
   word-wrap: break-word;
   white-space: normal !important;
 }
