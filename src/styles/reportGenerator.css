@@ -127,10 +127,6 @@
   text-align: center;
 }
 
-/* ===== FROZEN COLUMNS ===== */
-/* All column freezing is handled dynamically by JavaScript (applyDynamicStickyColumns) */
-/* This approach ensures flexibility when column counts change in the future */
-
 .slds-table--bordered,
 .slds-table_bordered {
   border: 1.5px solid #d5d5d5;
@@ -170,13 +166,14 @@ tbody tr td {
 /* === Filter, search and count === */
 .slds-text-heading_large {
   width: auto;
-  height: 28px;
+  min-height: 28px;
   top: 50px;
   left: 43px;
   font-weight: 200;
   font-size: 28px;
   line-height: 28px;
   letter-spacing: 0px;
+  white-space: nowrap;
 }
 
 .search-container {
@@ -250,6 +247,12 @@ tbody tr td {
 /* === Report page === */
 html {
   background: #f8f8f8;
+}
+
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .diffModal {
@@ -341,7 +344,7 @@ html {
 .scrollable-wrapper {
   display: flex;
   width: 100%;
-  overflow-x: auto;
+  /* overflow-x moved to .table-container to allow sticky positioning to work */
   transition: all 0.3s ease;
   box-sizing: border-box;
 }
@@ -351,7 +354,8 @@ html {
   width: 100%;
   transition: width 0.3s ease;
   box-sizing: border-box;
-  min-width: 700px;
+  /* Removed min-width to prevent forcing horizontal scroll at page level */
+  /* min-width: 700px; */
 }
 
 .table-summary-wrapper.shrunk {

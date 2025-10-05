@@ -309,11 +309,13 @@ function loadProps() {
 }
 
 /**
- * Helper function to apply sticky styling to a single column (rowspan=2 case)
- * Used for reports like Custom Labels where only the first column should be frozen
+ * Helper function to apply sticky styling to a single column
+ * Used for reports where only the first column should be frozen:
+ * - Custom Labels (rowspan=2, colspan=1) - 180px width
+ * - Apex, LWC, Experience Sites, FlexiPage (single-level header) - 250px width
  */
-function applySingleColumnFreeze(table, headerCell) {
-  const columnWidth = 180;
+function applySingleColumnFreeze(table, headerCell, columnWidth = 180) {
+  // Default to 180px for Custom Labels, but can be overridden for other reports
 
   // Apply styles to first header cell using setProperty with 'important' to override CSS
   headerCell.style.setProperty('width', `${columnWidth}px`, 'important');
@@ -403,8 +405,8 @@ function applySingleColumnFreeze(table, headerCell) {
  * the first header has a colspan indicating how many columns to freeze.
  */
 function applyDynamicStickyColumns() {
-  // Find all table containers with data-model attribute (assessment reports)
-  const tableContainers = document.querySelectorAll('.table-container[data-model]');
+  // Find all table containers (assessment and migration reports)
+  const tableContainers = document.querySelectorAll('.table-container');
 
   tableContainers.forEach((container) => {
     const table = container.querySelector('table.slds-table');
@@ -427,8 +429,15 @@ function applyDynamicStickyColumns() {
 
     // Handle single column with rowspan=2 (e.g., Custom Labels - only first column frozen)
     if (rowspan === 2 && colspan === 1) {
-      // Single column frozen case
-      applySingleColumnFreeze(table, firstHeaderCell);
+      // Single column frozen case - use 180px width for Custom Labels
+      applySingleColumnFreeze(table, firstHeaderCell, 180);
+      return;
+    }
+
+    // Handle single-level header (rowspan=1, colspan=1) - e.g., Apex, LWC, Experience Sites, FlexiPage
+    // Freeze only the first column - use 250px width to match other reports
+    if (rowspan === 1 && colspan === 1 && !secondRow) {
+      applySingleColumnFreeze(table, firstHeaderCell, 250);
       return;
     }
 
