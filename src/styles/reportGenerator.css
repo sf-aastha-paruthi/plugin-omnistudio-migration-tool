@@ -56,6 +56,7 @@
   /* push right */
   width: 100%;
   padding: 8px 0;
+  position: relative;
 }
 
 .filter-dropdown {
@@ -63,13 +64,15 @@
   position: absolute;
   background-color: white;
   min-width: 250px;
+  max-width: 400px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   padding: 12px;
-  z-index: 10;
+  z-index: 100;
   border: 1px solid #ccc;
   border-radius: 8px;
-  right: 0;
-  margin: 32px;
+  right: 20px;
+  top: 40px;
+  margin-top: 0;
 }
 
 .filter-dropdown.show {
@@ -124,84 +127,9 @@
   text-align: center;
 }
 
-/* ===== FROZEN COLUMNS - Shared styles ===== */
-/* Common styles for all frozen columns */
-.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child,
-.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child,
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:first-child,
-.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:first-child,
-.table-container[data-model='standard' i] .slds-table tbody tr td:first-child,
-.table-container[data-model='custom' i] .slds-table tbody tr td:first-child {
-  position: sticky !important;
-  left: 0 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-left: 1px solid #e5e5e5 !important;
-}
-
-.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child,
-.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child,
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:first-child,
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(3),
-.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:first-child,
-.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:nth-child(2) {
-  z-index: 20 !important;
-  background-color: #f3f3f3 !important;
-}
-
-.table-container[data-model='standard' i] .slds-table tbody tr td:first-child,
-.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(2),
-.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(3),
-.table-container[data-model='custom' i] .slds-table tbody tr td:first-child,
-.table-container[data-model='custom' i] .slds-table tbody tr td:nth-child(2) {
-  z-index: 10 !important;
-  background-color: #fff !important;
-}
-
-/* Standard model - 3 columns */
-.table-container[data-model='standard' i] .slds-table thead tr:first-child th:first-child {
-  width: 600px !important;
-  min-width: 600px !important;
-  max-width: 600px !important;
-}
-
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
-.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(2) {
-  position: sticky !important;
-  left: 200px !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-.table-container[data-model='standard' i] .slds-table thead tr:nth-child(2) th:nth-child(3),
-.table-container[data-model='standard' i] .slds-table tbody tr td:nth-child(3) {
-  position: sticky !important;
-  left: 400px !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-right: 1px solid #e5e5e5 !important;
-}
-
-/* Custom model - 2 columns */
-.table-container[data-model='custom' i] .slds-table thead tr:first-child th:first-child {
-  width: 400px !important;
-  min-width: 400px !important;
-  max-width: 400px !important;
-}
-
-.table-container[data-model='custom' i] .slds-table thead tr:nth-child(2) th:nth-child(2),
-.table-container[data-model='custom' i] .slds-table tbody tr td:nth-child(2) {
-  position: sticky !important;
-  left: 200px !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-  border-right: 1px solid #e5e5e5 !important;
-}
+/* ===== FROZEN COLUMNS ===== */
+/* All column freezing is handled dynamically by JavaScript (applyDynamicStickyColumns) */
+/* This approach ensures flexibility when column counts change in the future */
 
 .slds-table--bordered,
 .slds-table_bordered {

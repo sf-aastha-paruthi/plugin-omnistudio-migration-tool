@@ -49,6 +49,7 @@ export class CustomLabelAssessmentReporter {
       rows,
       rollbackFlags: undefined,
       callToAction: [],
+      reportType: 'customlabels', // Identifier for Custom Labels specific CSS styling
     };
 
     // Only add pagination if there are multiple pages
