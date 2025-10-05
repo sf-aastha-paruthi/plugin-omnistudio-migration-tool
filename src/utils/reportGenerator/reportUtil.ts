@@ -1,3 +1,4 @@
+import { isStandardDataModel } from '../dataModelService';
 import { OmnistudioOrgDetails } from '../orgUtils';
 import { escapeHtml } from '../stringUtils';
 import { FilterGroupParam, OrgParam, ReportDataParam } from './reportInterfaces';
@@ -51,4 +52,15 @@ export function createFilterGroupParam(label: string, key: string, filters: stri
       label: filter,
     })),
   };
+}
+
+export function getAssessmentReportNameHeaders(): Array<{ name: string; colspan: number; rowspan: number }> {
+  if (isStandardDataModel()) {
+    return [{ name: 'Standard', colspan: 3, rowspan: 1 }];
+  } else {
+    return [
+      { name: 'Managed Package', colspan: 2, rowspan: 1 },
+      { name: 'Standard', colspan: 1, rowspan: 1 },
+    ];
+  }
 }

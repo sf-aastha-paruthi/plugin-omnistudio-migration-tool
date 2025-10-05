@@ -38,6 +38,7 @@ export class GlobalAutoNumberAssessmentReporter {
             )
           : undefined,
       callToAction: reportingHelper.getCallToAction(globalAutoNumberAssessmentInfos),
+      reportType: 'globalautonumber', // Identifier for Global Auto Number specific CSS styling
     };
   }
 

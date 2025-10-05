@@ -308,9 +308,266 @@ function loadProps() {
   console.log('parsed props', props);
 }
 
+/**
+ * Helper function to apply sticky styling to a single column
+ * Used for reports where only the first column should be frozen:
+ * - Custom Labels (rowspan=2, colspan=1) - 180px width
+ * - Apex, LWC, Experience Sites, FlexiPage (single-level header) - 250px width
+ */
+function applySingleColumnFreeze(table, headerCell, columnWidth = 180) {
+  // Default to 180px for Custom Labels, but can be overridden for other reports
+
+  // Apply styles to first header cell
+  applyStickyStyles(headerCell, columnWidth, 0, 20, '#f3f3f3', true);
+
+  // Ensure all other header cells in both rows are NOT sticky
+  const thead = table.querySelector('thead');
+  if (thead) {
+    const allHeaderCells = thead.querySelectorAll('th');
+    allHeaderCells.forEach((th, index) => {
+      if (index > 0) {
+        removeStickyStyles(th);
+      }
+    });
+  }
+
+  // Apply styles to body cells in first column
+  const tbody = table.querySelector('tbody');
+  if (tbody) {
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((row) => {
+      const firstCell = row.querySelector('td:first-child');
+      if (firstCell) {
+        applyStickyStyles(firstCell, columnWidth, 0, 10, '#fff', true);
+      }
+    });
+
+    // Ensure all other columns are NOT sticky
+    rows.forEach((row) => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      cells.forEach((cell, index) => {
+        if (index > 0) {
+          removeStickyStyles(cell);
+        }
+      });
+    });
+
+    // Add hover effect for first column
+    rows.forEach((row) => {
+      row.addEventListener('mouseenter', () => {
+        const firstCell = row.querySelector('td:first-child');
+        if (firstCell) {
+          firstCell.style.setProperty('background-color', '#f3f3f3', 'important');
+        }
+      });
+
+      row.addEventListener('mouseleave', () => {
+        const firstCell = row.querySelector('td:first-child');
+        if (firstCell) {
+          firstCell.style.setProperty('background-color', '#fff', 'important');
+        }
+      });
+    });
+  }
+}
+
+/**
+ * Helper function to apply sticky styles to a cell
+ */
+function applyStickyStyles(element, width, left, zIndex, bgColor, addBorder = false) {
+  element.style.setProperty('width', `${width}px`, 'important');
+  element.style.setProperty('min-width', `${width}px`, 'important');
+  element.style.setProperty('max-width', `${width}px`, 'important');
+  element.style.setProperty('position', 'sticky', 'important');
+  element.style.setProperty('left', `${left}px`, 'important');
+  element.style.setProperty('z-index', `${zIndex}`, 'important');
+  element.style.setProperty('background-color', bgColor, 'important');
+  if (addBorder) {
+    element.style.setProperty('border-right', '1px solid #e5e5e5', 'important');
+  }
+}
+
+/**
+ * Helper function to remove sticky styles from a cell
+ */
+function removeStickyStyles(element) {
+  element.style.setProperty('position', 'static', 'important');
+  element.style.setProperty('left', 'auto', 'important');
+  element.style.setProperty('width', 'auto', 'important');
+  element.style.setProperty('min-width', 'auto', 'important');
+  element.style.setProperty('max-width', 'none', 'important');
+}
+
+/**
+ * Apply sticky styles to header cells for multi-column freeze
+ */
+function applyMultiColumnHeaderFreeze(firstHeaderCell, secondRow, colspan, baseColumnWidth, firstColumnWidth) {
+  // Calculate total width for the first header
+  const totalHeaderWidth = firstColumnWidth + (colspan - 1) * baseColumnWidth;
+
+  // Apply styles to first row first header
+  applyStickyStyles(firstHeaderCell, totalHeaderWidth, 0, 20, '#f3f3f3', true);
+
+  // Apply styles to second row headers (sub-headers under the first header)
+  const secondRowHeaders = Array.from(secondRow.querySelectorAll('th'));
+  let cumulativeLeft = 0;
+
+  for (let i = 0; i < secondRowHeaders.length; i++) {
+    const header = secondRowHeaders[i];
+
+    if (i < colspan) {
+      // Freeze this column
+      const columnWidth = i === 0 ? firstColumnWidth : baseColumnWidth;
+      const isLastFrozen = i === colspan - 1;
+      applyStickyStyles(header, columnWidth, cumulativeLeft, 20, '#f3f3f3', isLastFrozen);
+      cumulativeLeft += columnWidth;
+    } else {
+      // Ensure non-frozen columns are NOT sticky
+      removeStickyStyles(header);
+    }
+  }
+}
+
+/**
+ * Remove sticky styles from non-frozen first-row headers
+ */
+function removeNonFrozenHeaderStyles(firstRow) {
+  const firstRowHeaders = Array.from(firstRow.querySelectorAll('th'));
+  for (let i = 1; i < firstRowHeaders.length; i++) {
+    removeStickyStyles(firstRowHeaders[i]);
+  }
+}
+
+/**
+ * Apply sticky styles to body cells for multi-column freeze
+ */
+function applyMultiColumnBodyFreeze(tbody, colspan, baseColumnWidth, firstColumnWidth) {
+  const rows = tbody.querySelectorAll('tr');
+
+  rows.forEach((row) => {
+    const cells = Array.from(row.querySelectorAll('td'));
+    let cumulativeLeft = 0;
+
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+
+      if (i < colspan) {
+        // Freeze this column
+        const columnWidth = i === 0 ? firstColumnWidth : baseColumnWidth;
+        const isLastFrozen = i === colspan - 1;
+        applyStickyStyles(cell, columnWidth, cumulativeLeft, 10, '#fff', isLastFrozen);
+        cumulativeLeft += columnWidth;
+      } else {
+        // Ensure non-frozen columns are NOT sticky
+        removeStickyStyles(cell);
+      }
+    }
+  });
+}
+
+/**
+ * Add hover effects to frozen cells
+ */
+function addHoverEffects(tbody, colspan) {
+  const rows = tbody.querySelectorAll('tr');
+
+  rows.forEach((row) => {
+    row.addEventListener('mouseenter', () => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      for (let i = 0; i < colspan && i < cells.length; i++) {
+        cells[i].style.setProperty('background-color', '#f3f3f3', 'important');
+      }
+    });
+
+    row.addEventListener('mouseleave', () => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      for (let i = 0; i < colspan && i < cells.length; i++) {
+        cells[i].style.setProperty('background-color', '#fff', 'important');
+      }
+    });
+  });
+}
+
+/**
+ * Handle multi-column freeze (for reports with colspan > 1)
+ */
+function handleMultiColumnFreeze(table, firstHeaderCell, firstRow, secondRow, colspan) {
+  const baseColumnWidth = 200;
+  const firstColumnWidth = 250;
+
+  // Apply header styles
+  applyMultiColumnHeaderFreeze(firstHeaderCell, secondRow, colspan, baseColumnWidth, firstColumnWidth);
+
+  // Remove sticky from other first-row headers
+  removeNonFrozenHeaderStyles(firstRow);
+
+  // Apply body cell styles
+  const tbody = table.querySelector('tbody');
+  if (tbody) {
+    applyMultiColumnBodyFreeze(tbody, colspan, baseColumnWidth, firstColumnWidth);
+    addHoverEffects(tbody, colspan);
+  }
+}
+
+/**
+ * Process a single table for sticky column application
+ */
+function processTable(table) {
+  const thead = table.querySelector('thead');
+  if (!thead) return;
+
+  const firstRow = thead.querySelector('tr:first-child');
+  const secondRow = thead.querySelector('tr:nth-child(2)');
+
+  if (!firstRow) return;
+
+  // Get the first header cell and its colspan/rowspan
+  const firstHeaderCell = firstRow.querySelector('th:first-child');
+  if (!firstHeaderCell) return;
+
+  const colspan = parseInt(firstHeaderCell.getAttribute('colspan') || '1', 10);
+  const rowspan = parseInt(firstHeaderCell.getAttribute('rowspan') || '1', 10);
+
+  // Handle single column with rowspan=2 (e.g., Custom Labels)
+  if (rowspan === 2 && colspan === 1) {
+    applySingleColumnFreeze(table, firstHeaderCell, 180);
+    return;
+  }
+
+  // Handle single-level header (e.g., Apex, LWC, Experience Sites, FlexiPage)
+  if (rowspan === 1 && colspan === 1 && !secondRow) {
+    applySingleColumnFreeze(table, firstHeaderCell, 250);
+    return;
+  }
+
+  // Handle multi-column freeze with colspan
+  if (secondRow && colspan > 1) {
+    handleMultiColumnFreeze(table, firstHeaderCell, firstRow, secondRow, colspan);
+  }
+}
+
+/**
+ * Main function: Dynamically applies sticky column styling to all tables
+ * Reads the table structure to determine how many columns should be frozen
+ */
+function applyDynamicStickyColumns() {
+  const tableContainers = document.querySelectorAll('.table-container');
+
+  tableContainers.forEach((container) => {
+    const table = container.querySelector('table.slds-table');
+    if (table) {
+      processTable(table);
+    }
+  });
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', applyDynamicStickyColumns);
+
 // Expose globally so HTML inline event handlers can access them
 window.toggleFilterDropdown = toggleFilterDropdown;
 window.closeFilterDropdown = closeFilterDropdown;
 window.closeAllFilterDropdowns = closeAllFilterDropdowns;
 window.filterAndSearchTable = filterAndSearchTable;
 window.toggleCtaSummaryPanel = toggleCtaSummaryPanel;
+window.applyDynamicStickyColumns = applyDynamicStickyColumns;

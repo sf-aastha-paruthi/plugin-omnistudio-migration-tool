@@ -204,6 +204,7 @@ export class DataRaptorMigrationTool extends BaseMigrationTool implements Migrat
           recordId,
           transformedDataRaptor
         );
+        drUploadResponse['id'] = standardId;
         transformedDataRaptor['Id'] = standardId;
       }
 

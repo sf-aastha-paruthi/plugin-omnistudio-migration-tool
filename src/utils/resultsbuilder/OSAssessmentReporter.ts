@@ -1,3 +1,4 @@
+import { isStandardDataModel } from '../dataModelService';
 import { OSAssessmentInfo } from '../interfaces';
 import { Logger } from '../logger';
 import { OmnistudioOrgDetails } from '../orgUtils';
@@ -8,7 +9,12 @@ import {
   ReportRowParam,
   SummaryItemDetailParam,
 } from '../reportGenerator/reportInterfaces';
-import { createFilterGroupParam, createRowDataParam, getOrgDetailsForReport } from '../reportGenerator/reportUtil';
+import {
+  createFilterGroupParam,
+  createRowDataParam,
+  getOrgDetailsForReport,
+  getAssessmentReportNameHeaders,
+} from '../reportGenerator/reportUtil';
 import { reportingHelper } from './reportingHelper';
 
 export class OSAssessmentReporter {
@@ -167,81 +173,27 @@ export class OSAssessmentReporter {
   }
 
   private static getHeaderGroupsForReport(): ReportHeaderGroupParam[] {
-    return [
-      {
-        header: [
-          {
-            name: 'Managed Package',
-            colspan: 2,
-            rowspan: 1,
-          },
-          {
-            name: 'Standard',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'Type',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Assessment Status',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Summary',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Omniscript Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Integration Procedure Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Data Mapper Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Remote Action Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-          {
-            name: 'Custom LWC Dependencies',
-            colspan: 1,
-            rowspan: 2,
-          },
-        ],
-      },
-      {
-        header: [
-          {
-            name: 'Name',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'ID',
-            colspan: 1,
-            rowspan: 1,
-          },
-          {
-            name: 'Name',
-            colspan: 1,
-            rowspan: 1,
-          },
-        ],
-      },
+    const firstRowHeaders = [
+      ...getAssessmentReportNameHeaders(),
+      { name: 'Type', colspan: 1, rowspan: 2 },
+      { name: 'Assessment Status', colspan: 1, rowspan: 2 },
+      { name: 'Summary', colspan: 1, rowspan: 2 },
+      { name: 'Omniscript Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Integration Procedure Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Data Mapper Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Remote Action Dependencies', colspan: 1, rowspan: 2 },
+      { name: 'Custom LWC Dependencies', colspan: 1, rowspan: 2 },
     ];
+
+    const nameLabel = isStandardDataModel() ? 'Updated Name' : 'Name';
+
+    const secondRowHeaders = [
+      { name: 'Name', colspan: 1, rowspan: 1 },
+      { name: 'ID', colspan: 1, rowspan: 1 },
+      { name: nameLabel, colspan: 1, rowspan: 1 },
+    ];
+
+    return [{ header: firstRowHeaders }, { header: secondRowHeaders }];
   }
 
   private static getFilterGroupsForReport(OSAssessmentInfos: OSAssessmentInfo[]): FilterGroupParam[] {

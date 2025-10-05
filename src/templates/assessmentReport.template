@@ -128,7 +128,7 @@
               </c:for>
             </div>
           </div>
-          <div class="table-container">
+          <div class="table-container standard custom" data-model="(org.dataModel)" data-report-type="(reportType)">
             <table
               class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_col-bordered"
               aria-label="Data Mapper Assessment">
