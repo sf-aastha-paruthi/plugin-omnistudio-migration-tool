@@ -286,5 +286,9 @@
   "deploymentTriggeredSuccessfully": "Please monitor your Deployment: %s using deployment status page in Org",
   "omniscriptPackageDeploymentFailedReturnedFalse": "Omniscript package deployment failed - deployment returned false. This may be due to missing package, permissions, or deployment timeout.",
   "omniscriptPackageDeploymentFailedWithMessage": "Omniscript package deployment failed: %s",
-  "customLWCFlexCardReferenceUpdated": "Updated Custom LWC FlexCard reference: %s -> cf%s"
+  "customLWCFlexCardReferenceUpdated": "Updated Custom LWC FlexCard reference: %s -> cf%s",
+  "validatingDrVersioningDisabled": "Checking Data mapper versioning org preference",
+  "drVersioningDisabled": "Data mapper versioning is disabled. Ok to proceed with the migration",
+  "drVersioningEnabled": "Data mapper versioning is enabled. Cannot proceed with the migration",
+  "errorValidatingDrVersioning": "Failed to read Data mapper versioning"
 }
