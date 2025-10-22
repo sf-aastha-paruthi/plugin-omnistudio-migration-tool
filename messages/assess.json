@@ -202,8 +202,8 @@
   "invalidTypeAssessErrorMessage": "We couldn't assess your Omnistudio components in the %s namespace. Select the correct namespace and try again",
   "assessmentSuccessfulMessage": "Migration assessment for org %s is complete and reports are ready for review in the folder %s",
   "missingMandatoryField": "Missing mandatory field: %s for %s",
-  "validatingDrVersioningDisabled": "Checking Data mapper versioning org preference",
-  "drVersioningDisabled": "Data mapper versioning is disabled. Ok to proceed with the assessment",
-  "drVersioningEnabled": "Data mapper versioning is enabled. Cannot proceed with the assessment",
-  "errorValidatingDrVersioning": "Failed to read Data mapper versioning"
+  "validatingDrVersioningDisabled": "Checking the Data Mapper versioning setting in your org.",
+  "drVersioningDisabled": "Proceeding with the assessment as the Data Mapper versioning setting is disabled.",
+  "drVersioningEnabled": "We cannot proceed with the assessment as the Data Mapper versioning setting is enabled in your org.",
+  "errorValidatingDrVersioning": "Failed to verify the status of the Data Mapper versioning setting."
 }
