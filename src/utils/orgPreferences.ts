@@ -53,8 +53,8 @@ export class OrgPreferences {
   public static async checkDRVersioning(connection: Connection): Promise<boolean> {
     try {
       const result = await connection.metadata.read('OmniStudioSettings', ['OmniStudioDrVersionOrgPreference']);
+      Logger.captureVerboseData('DR version response', result);
       const metadata = result as MetadataInfo;
-      Logger.logVerbose(`DR version response: ${metadata.enableOmniStudioDrVersion}`);
       return metadata.enableOmniStudioDrVersion === 'true';
     } catch (error) {
       throw new Error(`Failed to read DR version: ${error instanceof Error ? error.message : String(error)}`);

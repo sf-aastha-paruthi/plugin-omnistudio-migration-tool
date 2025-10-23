@@ -290,5 +290,5 @@
   "validatingDrVersioningDisabled": "Checking the Data Mapper versioning setting in your org.",
   "drVersioningDisabled": "Proceeding with the migration as the Data Mapper versioning setting is disabled.",
   "drVersioningEnabled": "We cannot proceed with the migration as the Data Mapper versioning setting is enabled in your org.",
-  "errorValidatingDrVersioning": "Failed to verify the status of the Data Mapper versioning setting."
+  "errorValidatingDrVersioning": "Failed to verify the status of the Data Mapper versioning setting. Try again later."
 }
