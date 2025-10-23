@@ -61,6 +61,158 @@ describe('OrgPreferences', () => {
     });
   });
 
+  describe('readDrVersion', () => {
+    it('should return true when DR versioning is enabled', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: 'true',
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.true;
+      expect(metadataReadStub.calledOnce).to.be.true;
+      expect(metadataReadStub.firstCall.args[0]).to.equal('OmniStudioSettings');
+      expect(metadataReadStub.firstCall.args[1]).to.deep.equal(['OmniStudioDrVersionOrgPreference']);
+    });
+
+    it('should return false when DR versioning is disabled', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: 'false',
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when enableOmniStudioDrVersion is not "true"', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: 'maybe',
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when enableOmniStudioDrVersion is undefined', async () => {
+      // Arrange
+      const metadataReadResult = {};
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when enableOmniStudioDrVersion is null', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: null,
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+
+    it('should throw error when metadata read fails', async () => {
+      // Arrange
+      const error = new Error('Metadata read failed');
+      const metadataReadStub = sandbox.stub().rejects(error);
+      connection.metadata.read = metadataReadStub;
+
+      // Act & Assert
+      try {
+        await OrgPreferences.checkDRVersioning(connection);
+        expect.fail('Expected an error to be thrown');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          expect(err.message).to.equal('Failed to read DR version: Metadata read failed');
+        } else {
+          expect.fail('Expected an Error object');
+        }
+      }
+    });
+
+    it('should throw error when metadata read fails with non-Error object', async () => {
+      // Arrange
+      const error = 'String error message';
+      const metadataReadStub = sandbox.stub().rejects(error);
+      connection.metadata.read = metadataReadStub;
+
+      // Act & Assert
+      try {
+        await OrgPreferences.checkDRVersioning(connection);
+        expect.fail('Expected an error to be thrown');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          expect(err.message).to.equal('Failed to read DR version: ');
+        } else {
+          expect.fail('Expected an Error object');
+        }
+      }
+    });
+
+    it('should handle boolean true value correctly', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: true,
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false; // Should be false because it's not the string 'true'
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+
+    it('should handle boolean false value correctly', async () => {
+      // Arrange
+      const metadataReadResult = {
+        enableOmniStudioDrVersion: false,
+      };
+      const metadataReadStub = sandbox.stub().resolves(metadataReadResult);
+      connection.metadata.read = metadataReadStub;
+
+      // Act
+      const result = await OrgPreferences.checkDRVersioning(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(metadataReadStub.calledOnce).to.be.true;
+    });
+  });
+
   describe('checkRollbackFlags', () => {
     it('should return empty array when no flags are enabled', async () => {
       // Arrange

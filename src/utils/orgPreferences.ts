@@ -4,6 +4,7 @@ import {
   ExperienceBundleSettingsMetadata,
   QueryResult,
   ExperienceBundleSettingsReadMetadata,
+  MetadataInfo,
 } from './interfaces';
 import { Logger } from './logger';
 
@@ -46,6 +47,17 @@ export class OrgPreferences {
       throw new Error(
         `Failed to enable disableRollbackFlagsPref: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  }
+
+  public static async checkDRVersioning(connection: Connection): Promise<boolean> {
+    try {
+      const result = await connection.metadata.read('OmniStudioSettings', ['OmniStudioDrVersionOrgPreference']);
+      Logger.captureVerboseData('DR version response', result);
+      const metadata = result as MetadataInfo;
+      return metadata.enableOmniStudioDrVersion === 'true';
+    } catch (error) {
+      throw new Error(`Failed to read DR version: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

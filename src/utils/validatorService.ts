@@ -1,6 +1,7 @@
 import { Connection, Messages } from '@salesforce/core';
 import { Logger } from '../utils/logger';
 import { OmnistudioOrgDetails } from './orgUtils';
+import { OrgPreferences } from './orgPreferences';
 
 export class ValidatorService {
   private readonly connection: Connection;
@@ -18,6 +19,7 @@ export class ValidatorService {
       this.validateNamespace() &&
       this.validatePackageInstalled() &&
       this.validateOmniStudioOrgPermissionEnabled() &&
+      (await this.validateDrVersioningDisabled()) &&
       (await this.validateOmniStudioLicenses())
     );
   }
@@ -74,5 +76,20 @@ export class ValidatorService {
       }
       return false;
     }
+  }
+
+  public async validateDrVersioningDisabled(): Promise<boolean> {
+    Logger.logVerbose(this.messages.getMessage('validatingDrVersioningDisabled'));
+    try {
+      const drVersion = await OrgPreferences.checkDRVersioning(this.connection);
+      if (!drVersion) {
+        Logger.logVerbose(this.messages.getMessage('drVersioningDisabled'));
+        return true;
+      }
+      Logger.error(this.messages.getMessage('drVersioningEnabled'));
+    } catch (error) {
+      Logger.error(this.messages.getMessage('errorValidatingDrVersioning'));
+    }
+    return false;
   }
 }

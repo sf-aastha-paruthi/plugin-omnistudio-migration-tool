@@ -92,7 +92,7 @@
   "fileImplementsVlocityOpenInterface": "The %s file implements VlocityOpenInterface. Changes will be applied.",
   "methodCallBundleNameUpdated": "Method call bundle name will be updated in %s for the %s class and %s method.",
   "cardNameChangeMessage": "The Flexcard name will be changed from %s to %s to adhere to the API naming standards.",
-  "authordNameChangeMessage": "The Flexcard author name will be changed from %s to %s to adhere to the naming rules: %s",
+  "authordNameChangeMessage": "The Flexcard author name will be changed from %s to %s to adhere to the naming rules",
   "cardLWCNameChangeMessage": "The Flexcard generated LWC name will be changed from %s to %s to align with Flexcard name change.",
   "omniScriptNameChangeMessage": "The Omniscript reference name %s will be changed to %s during migration.",
   "dataRaptorNameChangeMessage": "The Data Mapper name will be changed from %s to %s during migration.",
@@ -201,5 +201,9 @@
   "dmNameReferenceNotFound": "Data Mapper reference can’t be updated",
   "invalidTypeAssessErrorMessage": "We couldn't assess your Omnistudio components in the %s namespace. Select the correct namespace and try again",
   "assessmentSuccessfulMessage": "Migration assessment for org %s is complete and reports are ready for review in the folder %s",
-  "missingMandatoryField": "Missing mandatory field: %s for %s"
+  "missingMandatoryField": "Missing mandatory field: %s for %s",
+  "validatingDrVersioningDisabled": "Checking the Data Mapper versioning setting in your org.",
+  "drVersioningDisabled": "Proceeding with the assessment as the Data Mapper versioning setting is disabled.",
+  "drVersioningEnabled": "We cannot proceed with the assessment as the Data Mapper versioning setting is enabled in your org.",
+  "errorValidatingDrVersioning": "Failed to verify the status of the Data Mapper versioning setting. Try again later."
 }
