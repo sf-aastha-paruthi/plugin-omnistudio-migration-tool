@@ -81,7 +81,7 @@ export class ValidatorService {
   public async validateDrVersioningDisabled(): Promise<boolean> {
     Logger.logVerbose(this.messages.getMessage('validatingDrVersioningDisabled'));
     try {
-      const drVersion = await OrgPreferences.readDrVersion(this.connection);
+      const drVersion = await OrgPreferences.checkDRVersioning(this.connection);
       if (!drVersion) {
         Logger.logVerbose(this.messages.getMessage('drVersioningDisabled'));
         return true;

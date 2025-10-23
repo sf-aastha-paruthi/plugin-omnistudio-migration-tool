@@ -71,7 +71,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.true;
@@ -89,7 +89,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false;
@@ -105,7 +105,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false;
@@ -119,7 +119,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false;
@@ -135,7 +135,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false;
@@ -150,7 +150,7 @@ describe('OrgPreferences', () => {
 
       // Act & Assert
       try {
-        await OrgPreferences.readDrVersion(connection);
+        await OrgPreferences.checkDRVersioning(connection);
         expect.fail('Expected an error to be thrown');
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -169,7 +169,7 @@ describe('OrgPreferences', () => {
 
       // Act & Assert
       try {
-        await OrgPreferences.readDrVersion(connection);
+        await OrgPreferences.checkDRVersioning(connection);
         expect.fail('Expected an error to be thrown');
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -189,7 +189,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false; // Should be false because it's not the string 'true'
@@ -205,7 +205,7 @@ describe('OrgPreferences', () => {
       connection.metadata.read = metadataReadStub;
 
       // Act
-      const result = await OrgPreferences.readDrVersion(connection);
+      const result = await OrgPreferences.checkDRVersioning(connection);
 
       // Assert
       expect(result).to.be.false;

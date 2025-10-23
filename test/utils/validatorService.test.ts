@@ -418,7 +418,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').resolves(false);
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(false);
       (messages.getMessage as sinon.SinonStub)
         .withArgs('validatingDrVersioningDisabled')
         .returns('Validating DR versioning disabled');
@@ -445,7 +445,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').resolves(true);
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(true);
       (messages.getMessage as sinon.SinonStub)
         .withArgs('validatingDrVersioningDisabled')
         .returns('Validating DR versioning disabled');
@@ -472,7 +472,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').rejects(new Error('Connection failed'));
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').rejects(new Error('Connection failed'));
       (messages.getMessage as sinon.SinonStub)
         .withArgs('validatingDrVersioningDisabled')
         .returns('Validating DR versioning disabled');
@@ -503,7 +503,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').resolves(false);
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(false);
       (messages.getMessage as sinon.SinonStub)
         .withArgs('validatingDrVersioningDisabled')
         .returns('Validating DR versioning disabled');
@@ -605,7 +605,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').resolves(false);
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(false);
       (messages.getMessage as sinon.SinonStub)
         .withArgs('unknownNamespace')
         .returns("Org doesn't have Omnistudio namespace(s) configured");
@@ -634,7 +634,7 @@ describe('ValidatorService', () => {
         records: [{ total: '5' }],
       };
       (connection.query as sinon.SinonStub).resolves(queryResult);
-      sandbox.stub(OrgPreferences, 'readDrVersion').resolves(true);
+      sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(true);
       (messages.getMessage as sinon.SinonStub)
         .withArgs('validatingDrVersioningDisabled')
         .returns('Validating DR versioning disabled');

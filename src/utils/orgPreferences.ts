@@ -50,7 +50,7 @@ export class OrgPreferences {
     }
   }
 
-  public static async readDrVersion(connection: Connection): Promise<boolean> {
+  public static async checkDRVersioning(connection: Connection): Promise<boolean> {
     try {
       const result = await connection.metadata.read('OmniStudioSettings', ['OmniStudioDrVersionOrgPreference']);
       const metadata = result as MetadataInfo;
