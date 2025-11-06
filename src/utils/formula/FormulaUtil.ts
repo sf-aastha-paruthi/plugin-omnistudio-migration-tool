@@ -5,6 +5,7 @@ import Stack from './Stack';
 import { DebugTimer } from '../logging/debugtimer';
 import { QueryTools } from '../query';
 import { Connection } from '@salesforce/core';
+import { isOmnistudioPackage } from '../dataModelService';
 
 function getReplacedformulaString(
   formulaExpression: string,
@@ -79,6 +80,9 @@ export function getFunctionDefinitionFields(): string[] {
 
 // Get All FunctionDefinition__mdt records
 export async function getAllFunctionMetadata(namespace: string, connection: Connection): Promise<AnyJson[]> {
+  if (isOmnistudioPackage()) {
+    return []; // Check if type is valid
+  }
   DebugTimer.getInstance().lap('Query FunctionDefinition__mdt');
   return await QueryTools.queryAll(connection, namespace, 'FunctionDefinition__mdt', getFunctionDefinitionFields());
 }

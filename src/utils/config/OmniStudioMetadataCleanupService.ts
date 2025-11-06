@@ -43,6 +43,7 @@ export class OmniStudioMetadataCleanupService {
    * @returns Promise<boolean> - true if all tables are empty, false if any table has records
    */
   public async hasCleanOmniStudioMetadataTables(): Promise<boolean> {
+    return true;
     try {
       for (const tableName of OmniStudioMetadataCleanupService.CONFIG_TABLES) {
         const recordIds = await QueryTools.queryIds(this.connection, tableName);

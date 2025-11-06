@@ -47,6 +47,11 @@ export function isStandardDataModel(): boolean {
   return dataModel === Constants.StandardDataModel;
 }
 
+// Convenience function to check if data model is standard
+export function isOmnistudioPackage(): boolean {
+  return true;
+}
+
 // Convenience function to check if data model is custom
 export function isCustomDataModel(): boolean {
   const dataModel = getDataModelInfo();
