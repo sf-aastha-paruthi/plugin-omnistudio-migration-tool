@@ -206,4 +206,25 @@ export class OrgPreferences {
       return false;
     }
   }
+
+  public static async getIsFoundationPackage(connection: Connection): Promise<boolean> {
+    try {
+      const query = `SELECT DeveloperName, Value FROM OmniInteractionConfig
+      WHERE DeveloperName = 'TheFirstInstalledOmniPackage'`;
+
+      const result = await connection.query(query);
+      if (result?.totalSize === 1) {
+        const records = result.records as Array<{ DeveloperName: string; Value: string }>;
+
+        if (records[0].Value === 'omnistudio') {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      Logger.error('Error checking foundation package');
+      return false;
+    }
+  }
 }

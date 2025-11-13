@@ -37,6 +37,12 @@ export class ValidatorService {
         Logger.error(this.messages.getMessage('omniStudioSettingsMetadataAlreadyEnabled'));
         return false;
       }
+      const isOmniInteractionConfigValid = await this.validateOmniInteractionConfig();
+      if (!isOmniInteractionConfigValid) {
+        Logger.error(this.messages.getMessage('omniInteractionConfigInvalid'));
+        return false;
+      }
+
       return true;
     }
 
@@ -101,6 +107,34 @@ export class ValidatorService {
       Logger.error(this.messages.getMessage('drVersioningEnabled'));
     } catch (error) {
       Logger.error(this.messages.getMessage('errorValidatingDrVersioning'));
+    }
+    return false;
+  }
+
+  public async validateOmniInteractionConfig(): Promise<boolean> {
+    Logger.logVerbose(this.messages.getMessage('validatingOmniInteractionConfig'));
+
+    try {
+      const query = `SELECT DeveloperName, Value FROM OmniInteractionConfig
+      WHERE DeveloperName IN ('TheFirstInstalledOmniPackage', 'InstalledIndustryPackage')`;
+
+      const result = await this.connection.query(query);
+      if (result?.totalSize === 1) {
+        const records = result.records as Array<{ DeveloperName: string; Value: string }>;
+        if (records[0].DeveloperName === 'TheFirstInstalledOmniPackage') {
+          return true;
+        }
+        return false;
+      } else if (result?.totalSize === 2) {
+        const records = result.records as Array<{ DeveloperName: string; Value: string }>;
+
+        if (records[0].Value === records[1].Value) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      Logger.error(this.messages.getMessage('omniInteractionConfigInvalid'));
     }
     return false;
   }

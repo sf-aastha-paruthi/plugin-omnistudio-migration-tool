@@ -20,7 +20,7 @@ import { ProjectPathUtil } from '../../../utils/projectPathUtil';
 import { PreMigrate } from '../../../migration/premigrate';
 import { PostMigrate } from '../../../migration/postMigrate';
 import { CustomLabelsUtil } from '../../../utils/customLabels';
-import { initializeDataModelService } from '../../../utils/dataModelService';
+import { initializeDataModelService, isFoundationPackage } from '../../../utils/dataModelService';
 import { ValidatorService } from '../../../utils/validatorService';
 
 Messages.importMessagesDirectory(__dirname);
@@ -328,6 +328,9 @@ export default class Assess extends OmniStudioBaseCommand {
     namespace: string,
     conn: Connection
   ): Promise<void> {
+    if (isFoundationPackage()) {
+      return;
+    }
     Logger.logVerbose(messages.getMessage('startingGlobalAutoNumberAssessment'));
     const globalAutoNumberMigrationTool = new GlobalAutoNumberMigrationTool(namespace, conn, Logger, messages, this.ux);
     assesmentInfo.globalAutoNumberAssessmentInfos = await globalAutoNumberMigrationTool.assess();
