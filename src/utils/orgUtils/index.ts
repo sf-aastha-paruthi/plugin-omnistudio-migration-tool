@@ -40,6 +40,7 @@ export class OrgUtils {
    * which already works with the standard model and does not need migration.
    * */
   private static readonly namespaces = new Set<string>([
+    'omnistudio', // Adding now for metadata API enablement migration
     'as_dev_01',
     'as_dev_02',
     'as_dev_03',

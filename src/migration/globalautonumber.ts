@@ -14,6 +14,7 @@ import { createProgressBar } from './base';
 import { OrgPreferences } from '../utils/orgPreferences';
 import { OmnistudioSettingsPrefManager } from '../utils/OmnistudioSettingsPrefManager';
 import { Constants } from '../utils/constants/stringContants';
+import { isOmnistudioPackage } from '../utils/dataModelService';
 
 export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements MigrationTool {
   private prefManager: OmnistudioSettingsPrefManager;
@@ -46,6 +47,10 @@ export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements 
   }
 
   public async truncate(): Promise<void> {
+    if (isOmnistudioPackage()) {
+      return;
+    }
+
     try {
       // Perform pre-migration checks before truncation
       await this.performPreMigrationChecks();
