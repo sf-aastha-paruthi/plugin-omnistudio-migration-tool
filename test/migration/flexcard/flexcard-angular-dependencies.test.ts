@@ -24,6 +24,7 @@ describe('FlexCard Angular Dependency Validation', () => {
       orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
       dataModel: 'Custom',
       hasValidNamespace: true,
+      isFoundationPackage: false,
     };
     initializeDataModelService(mockOrgDetails);
 

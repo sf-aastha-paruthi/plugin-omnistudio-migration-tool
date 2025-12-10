@@ -16,16 +16,22 @@ export class DataModelService {
     }
     return Constants.StandardDataModel;
   }
+
+  public isFoundationPackage(): boolean {
+    return this.orgs.isFoundationPackage ?? false;
+  }
 }
 
 // Global instance and cached data model
 let globalDataModelService: DataModelService | null = null;
 let cachedDataModel: string | null = null;
+let cachedIsFoundationPackage: boolean | null = null;
 
 // Initialize the global instance
 export function initializeDataModelService(orgs: OmnistudioOrgDetails): void {
   globalDataModelService = new DataModelService(orgs);
   cachedDataModel = null; // Reset cache when reinitializing
+  cachedIsFoundationPackage = null; // Reset cache when reinitializing
 }
 
 // Get the global instance
@@ -39,6 +45,13 @@ export function getDataModelInfo(): string {
     cachedDataModel = getDataModelService().getDataModel();
   }
   return cachedDataModel;
+}
+
+export function isFoundationPackage(): boolean {
+  if (cachedIsFoundationPackage === null) {
+    cachedIsFoundationPackage = getDataModelService().isFoundationPackage();
+  }
+  return cachedIsFoundationPackage;
 }
 
 // Convenience function to check if data model is standard

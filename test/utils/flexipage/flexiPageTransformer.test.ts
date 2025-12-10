@@ -60,6 +60,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
@@ -132,6 +133,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
@@ -169,6 +171,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
         [
@@ -181,6 +184,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
         [
@@ -193,6 +197,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
@@ -226,9 +231,25 @@ describe('transformFlexipageBundle', () => {
       osStorage: new Map(),
       osStandardStorage: new Map(),
       fcStorage: new Map([
-        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false }],
-        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false }],
-        ['card3', { name: 'Card3', originalName: 'Card3', isDuplicate: false }],
+        [
+          'card1',
+          {
+            name: 'Card1',
+            originalName: 'Card1',
+            isDuplicate: false,
+            migrationSuccess: true,
+          },
+        ],
+        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false, migrationSuccess: true }],
+        [
+          'card3',
+          {
+            name: 'Card3',
+            originalName: 'Card3',
+            isDuplicate: false,
+            migrationSuccess: true,
+          },
+        ],
       ]),
     };
     sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
@@ -272,6 +293,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
         [
@@ -284,13 +306,14 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
       osStandardStorage: new Map(),
       fcStorage: new Map([
-        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false }],
-        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false }],
+        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false, migrationSuccess: true }],
+        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false, migrationSuccess: true }],
       ]),
     };
     sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
@@ -334,6 +357,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
         [
@@ -346,13 +370,14 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
       osStandardStorage: new Map(),
       fcStorage: new Map([
-        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false }],
-        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false }],
+        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false, migrationSuccess: true }],
+        ['card2', { name: 'Card2', originalName: 'Card2', isDuplicate: false, migrationSuccess: true }],
       ]),
     };
     sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
@@ -408,6 +433,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
         [
@@ -420,6 +446,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
@@ -451,8 +478,14 @@ describe('transformFlexipageBundle', () => {
       osStorage: new Map(),
       osStandardStorage: new Map(),
       fcStorage: new Map([
-        ['mixedcase', { name: 'MixedCaseCard', originalName: 'MixedCaseCard', isDuplicate: false }],
-        ['lowercase', { name: 'lowercasecard', originalName: 'lowercasecard', isDuplicate: false }],
+        [
+          'mixedcase',
+          { name: 'MixedCaseCard', originalName: 'MixedCaseCard', isDuplicate: false, migrationSuccess: true },
+        ],
+        [
+          'lowercase',
+          { name: 'lowercasecard', originalName: 'lowercasecard', isDuplicate: false, migrationSuccess: true },
+        ],
       ]),
     };
     sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
@@ -492,6 +525,7 @@ describe('transformFlexipageBundle', () => {
             language: 'English',
             originalLanguage: 'English',
             isDuplicate: false,
+            migrationSuccess: true,
           },
         ],
       ]),
@@ -515,7 +549,12 @@ describe('transformFlexipageBundle', () => {
     const mockStorage = {
       osStorage: new Map(),
       osStandardStorage: new Map(),
-      fcStorage: new Map([['mixedcase', { name: 'MixedCaseCard', originalName: 'MixedCaseCard', isDuplicate: false }]]),
+      fcStorage: new Map([
+        [
+          'mixedcase',
+          { name: 'MixedCaseCard', originalName: 'MixedCaseCard', isDuplicate: false, migrationSuccess: true },
+        ],
+      ]),
     };
     sandbox.stub(StorageUtil, 'getOmnistudioAssessmentStorage').returns(mockStorage);
 
@@ -529,6 +568,112 @@ describe('transformFlexipageBundle', () => {
     expect(changed.flexiPageRegions[0].itemInstances[0].componentInstance.componentName).to.equal(
       'runtime_omnistudio:flexcard'
     );
+  });
+
+  it('throws ProcessingError when OmniScript migrationSuccess is false', () => {
+    // Mock StorageUtil with migrationSuccess: false
+    const mockStorage = {
+      osStorage: new Map([
+        [
+          'subtype',
+          {
+            type: 'OSForCustomLWC',
+            originalType: 'OSForCustomLWC',
+            subtype: 'OSForCustomLWC',
+            originalSubtype: 'OSForCustomLWC',
+            language: 'English',
+            originalLanguage: 'English',
+            isDuplicate: false,
+            migrationSuccess: false,
+          },
+        ],
+      ]),
+      osStandardStorage: new Map(),
+      fcStorage: new Map(),
+    };
+    sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
+
+    const bundle: Flexipage = {
+      flexiPageRegions: [
+        makeRegion([
+          makeItemInstance([
+            { name: 'target', value: 'type:subtype' },
+            { name: 'other', value: 'bar' },
+          ]),
+        ]),
+      ],
+    };
+    expect(() => transformFlexipageBundle(bundle, namespace, 'migrate')).to.throw('Key subtype can not be processed');
+  });
+
+  it('throws ProcessingError when FlexCard migrationSuccess is false', () => {
+    // Mock StorageUtil with migrationSuccess: false
+    const mockStorage = {
+      osStorage: new Map(),
+      osStandardStorage: new Map(),
+      fcStorage: new Map([
+        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false, migrationSuccess: false }],
+      ]),
+    };
+    sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
+
+    const bundle: Flexipage = {
+      flexiPageRegions: [makeRegion([makeItemInstance([{ name: 'target', value: 'type:cfcard1' }])])],
+    };
+    expect(() => transformFlexipageBundle(bundle, namespace, 'migrate')).to.throw('Key card1 can not be processed');
+  });
+
+  it('throws ProcessingError when OmniScript migrationSuccess is false in assess mode', () => {
+    // Mock StorageUtil with migrationSuccess: false
+    const mockStorage = {
+      osStorage: new Map([
+        [
+          'subtype',
+          {
+            type: 'OSForCustomLWC',
+            originalType: 'OSForCustomLWC',
+            subtype: 'OSForCustomLWC',
+            originalSubtype: 'OSForCustomLWC',
+            language: 'English',
+            originalLanguage: 'English',
+            isDuplicate: false,
+            migrationSuccess: false,
+          },
+        ],
+      ]),
+      osStandardStorage: new Map(),
+      fcStorage: new Map(),
+    };
+    sandbox.stub(StorageUtil, 'getOmnistudioAssessmentStorage').returns(mockStorage);
+
+    const bundle: Flexipage = {
+      flexiPageRegions: [
+        makeRegion([
+          makeItemInstance([
+            { name: 'target', value: 'type:subtype' },
+            { name: 'other', value: 'bar' },
+          ]),
+        ]),
+      ],
+    };
+    expect(() => transformFlexipageBundle(bundle, namespace, 'assess')).to.throw('Key subtype can not be processed');
+  });
+
+  it('throws ProcessingError when FlexCard migrationSuccess is false in assess mode', () => {
+    // Mock StorageUtil with migrationSuccess: false
+    const mockStorage = {
+      osStorage: new Map(),
+      osStandardStorage: new Map(),
+      fcStorage: new Map([
+        ['card1', { name: 'Card1', originalName: 'Card1', isDuplicate: false, migrationSuccess: false }],
+      ]),
+    };
+    sandbox.stub(StorageUtil, 'getOmnistudioAssessmentStorage').returns(mockStorage);
+
+    const bundle: Flexipage = {
+      flexiPageRegions: [makeRegion([makeItemInstance([{ name: 'target', value: 'type:cfcard1' }])])],
+    };
+    expect(() => transformFlexipageBundle(bundle, namespace, 'assess')).to.throw('Key card1 can not be processed');
   });
 
   describe('Standard Data Model Tests', () => {
@@ -568,6 +713,7 @@ describe('transformFlexipageBundle', () => {
               language: 'Spanish',
               originalLanguage: 'Spanish',
               isDuplicate: false,
+              migrationSuccess: true,
             },
           ],
         ]),
@@ -607,7 +753,10 @@ describe('transformFlexipageBundle', () => {
         osStorage: new Map(),
         osStandardStorage: new Map(),
         fcStorage: new Map([
-          ['testflexcard', { name: 'UpdatedFlexCard', originalName: 'TestFlexCard', isDuplicate: false }],
+          [
+            'testflexcard',
+            { name: 'UpdatedFlexCard', originalName: 'TestFlexCard', isDuplicate: false, migrationSuccess: true },
+          ],
         ]),
       };
       sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
@@ -687,6 +836,128 @@ describe('transformFlexipageBundle', () => {
 
       const result = transformFlexipageBundle(bundle, namespace, 'migrate');
       expect(result).to.equal(false); // No changes made
+    });
+
+    it('throws ProcessingError when standard data model OmniScript has migrationSuccess false', () => {
+      // Mock isStandardDataModel to return true
+      sandbox.stub(dataModelService, 'isStandardDataModel').returns(true);
+
+      // Mock StorageUtil with migrationSuccess: false
+      const mockStorage = {
+        osStorage: new Map(),
+        osStandardStorage: new Map([
+          [
+            JSON.stringify({ type: 'TestType', subtype: 'TestSubtype', language: 'English' }),
+            {
+              type: 'UpdatedType',
+              originalType: 'UpdatedType',
+              subtype: 'UpdatedSubtype',
+              originalSubtype: 'UpdatedSubtype',
+              language: 'Spanish',
+              originalLanguage: 'Spanish',
+              isDuplicate: false,
+              migrationSuccess: false,
+            },
+          ],
+        ]),
+        fcStorage: new Map(),
+      };
+      sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
+
+      const bundle: Flexipage = {
+        flexiPageRegions: [makeRegion([makeStandardOmniScriptComponent('TestType', 'TestSubtype', 'English')])],
+      };
+
+      expect(() => transformFlexipageBundle(bundle, namespace, 'migrate')).to.throw(
+        'Key TestType_TestSubtype_English can not be processed'
+      );
+    });
+
+    it('throws ProcessingError when standard data model FlexCard has migrationSuccess false', () => {
+      // Mock isStandardDataModel to return true
+      sandbox.stub(dataModelService, 'isStandardDataModel').returns(true);
+
+      // Mock StorageUtil with migrationSuccess: false
+      const mockStorage = {
+        osStorage: new Map(),
+        osStandardStorage: new Map(),
+        fcStorage: new Map([
+          [
+            'testflexcard',
+            { name: 'UpdatedFlexCard', originalName: 'TestFlexCard', isDuplicate: false, migrationSuccess: false },
+          ],
+        ]),
+      };
+      sandbox.stub(StorageUtil, 'getOmnistudioMigrationStorage').returns(mockStorage);
+
+      const bundle: Flexipage = {
+        flexiPageRegions: [makeRegion([makeStandardFlexCardComponent('TestFlexCard')])],
+      };
+
+      expect(() => transformFlexipageBundle(bundle, namespace, 'migrate')).to.throw(
+        'Key TestFlexCard can not be processed'
+      );
+    });
+
+    it('throws ProcessingError when standard data model OmniScript has migrationSuccess false in assess mode', () => {
+      // Mock isStandardDataModel to return true
+      sandbox.stub(dataModelService, 'isStandardDataModel').returns(true);
+
+      // Mock StorageUtil with migrationSuccess: false
+      const mockStorage = {
+        osStorage: new Map(),
+        osStandardStorage: new Map([
+          [
+            JSON.stringify({ type: 'TestType', subtype: 'TestSubtype', language: 'English' }),
+            {
+              type: 'UpdatedType',
+              originalType: 'UpdatedType',
+              subtype: 'UpdatedSubtype',
+              originalSubtype: 'UpdatedSubtype',
+              language: 'Spanish',
+              originalLanguage: 'Spanish',
+              isDuplicate: false,
+              migrationSuccess: false,
+            },
+          ],
+        ]),
+        fcStorage: new Map(),
+      };
+      sandbox.stub(StorageUtil, 'getOmnistudioAssessmentStorage').returns(mockStorage);
+
+      const bundle: Flexipage = {
+        flexiPageRegions: [makeRegion([makeStandardOmniScriptComponent('TestType', 'TestSubtype', 'English')])],
+      };
+
+      expect(() => transformFlexipageBundle(bundle, namespace, 'assess')).to.throw(
+        'Key TestType_TestSubtype_English can not be processed'
+      );
+    });
+
+    it('throws ProcessingError when standard data model FlexCard has migrationSuccess false in assess mode', () => {
+      // Mock isStandardDataModel to return true
+      sandbox.stub(dataModelService, 'isStandardDataModel').returns(true);
+
+      // Mock StorageUtil with migrationSuccess: false
+      const mockStorage = {
+        osStorage: new Map(),
+        osStandardStorage: new Map(),
+        fcStorage: new Map([
+          [
+            'testflexcard',
+            { name: 'UpdatedFlexCard', originalName: 'TestFlexCard', isDuplicate: false, migrationSuccess: false },
+          ],
+        ]),
+      };
+      sandbox.stub(StorageUtil, 'getOmnistudioAssessmentStorage').returns(mockStorage);
+
+      const bundle: Flexipage = {
+        flexiPageRegions: [makeRegion([makeStandardFlexCardComponent('TestFlexCard')])],
+      };
+
+      expect(() => transformFlexipageBundle(bundle, namespace, 'assess')).to.throw(
+        'Key TestFlexCard can not be processed'
+      );
     });
   });
 });

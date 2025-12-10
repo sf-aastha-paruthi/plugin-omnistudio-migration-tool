@@ -13,6 +13,7 @@ import { OrgPreferences } from '../../src/utils/orgPreferences';
 import { NetUtils } from '../../src/utils/net';
 import { QueryTools } from '../../src/utils';
 import { DebugTimer } from '../../src/utils/logging/debugtimer';
+import * as dataModelService from '../../src/utils/dataModelService';
 
 describe('GlobalAutoNumberMigrationTool', () => {
   let globalAutoNumberMigrationTool: GlobalAutoNumberMigrationTool;
@@ -535,6 +536,232 @@ describe('GlobalAutoNumberMigrationTool', () => {
     it('should handle empty namespace', () => {
       const toolWithoutNamespace = new GlobalAutoNumberMigrationTool('', connection, logger, messages, ux);
       expect((toolWithoutNamespace as any).namespacePrefix).to.equal('');
+    });
+  });
+
+  describe('isFoundationPackage Integration', () => {
+    let isFoundationPackageStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      isFoundationPackageStub = sandbox.stub(dataModelService, 'isFoundationPackage');
+    });
+
+    describe('truncate with isFoundationPackage', () => {
+      it('should return early when isFoundationPackage is true', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+        const performPreMigrationChecksStub = sandbox.stub(
+          globalAutoNumberMigrationTool as any,
+          'performPreMigrationChecks'
+        );
+        const getAllGlobalAutoNumberSettingsStub = sandbox.stub(
+          globalAutoNumberMigrationTool as any,
+          'getAllGlobalAutoNumberSettings'
+        );
+
+        // Act
+        await globalAutoNumberMigrationTool.truncate();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(performPreMigrationChecksStub.called).to.be.false; // Should not be called
+        expect(getAllGlobalAutoNumberSettingsStub.called).to.be.false; // Should not be called
+      });
+
+      it('should proceed with truncate when isFoundationPackage is false', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(false);
+        const mockGlobalAutoNumbers = [
+          {
+            Id: '001',
+            Name: 'TestGAN1',
+            Increment__c: 1,
+          },
+        ];
+        const performPreMigrationChecksStub = sandbox
+          .stub(globalAutoNumberMigrationTool as any, 'performPreMigrationChecks')
+          .resolves();
+        const getAllGlobalAutoNumberSettingsStub = sandbox
+          .stub(globalAutoNumberMigrationTool as any, 'getAllGlobalAutoNumberSettings')
+          .resolves(mockGlobalAutoNumbers);
+        sandbox.stub(QueryTools, 'queryIds').resolves([]);
+        sandbox.stub(NetUtils, 'delete').resolves(true);
+
+        // Act
+        await globalAutoNumberMigrationTool.truncate();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(performPreMigrationChecksStub.calledOnce).to.be.true;
+        expect(getAllGlobalAutoNumberSettingsStub.calledOnce).to.be.true;
+      });
+    });
+
+    describe('migrate with isFoundationPackage', () => {
+      it('should return empty result when isFoundationPackage is true', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+        const performPreMigrationChecksStub = sandbox.stub(
+          globalAutoNumberMigrationTool as any,
+          'performPreMigrationChecks'
+        );
+        const migrateGlobalAutoNumberDataStub = sandbox.stub(
+          globalAutoNumberMigrationTool as any,
+          'migrateGlobalAutoNumberData'
+        );
+
+        // Act
+        const result = await globalAutoNumberMigrationTool.migrate();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(performPreMigrationChecksStub.called).to.be.false; // Should not be called
+        expect(migrateGlobalAutoNumberDataStub.called).to.be.false; // Should not be called
+        expect(result).to.be.an('array').with.length(1);
+        expect(result[0].name).to.equal('Omni Global Auto Number');
+        expect(result[0].results.size).to.equal(0); // Empty Map
+        expect(result[0].records.size).to.equal(0); // Empty Map
+      });
+
+      it('should proceed with migration when isFoundationPackage is false', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(false);
+        const mockGlobalAutoNumbers = [
+          {
+            Id: '001',
+            Name: 'TestGAN1',
+            Increment__c: 1,
+            LastGeneratedNumber__c: 100,
+            LeftPadDigit__c: 5,
+            MinimumLength__c: 10,
+            Prefix__c: 'TEST',
+            Separator__c: '-',
+          },
+        ];
+
+        sandbox.stub(QueryTools, 'queryAll').resolves(mockGlobalAutoNumbers);
+        sandbox.stub(NetUtils, 'createOne').resolves({
+          referenceId: '001',
+          id: 'new001',
+          success: true,
+          errors: [],
+          warnings: [],
+          hasErrors: false,
+        });
+        sandbox.stub(OrgPreferences, 'checkRollbackFlags').resolves([]);
+        sandbox.stub(globalAutoNumberMigrationTool as any, 'performPreMigrationChecks').resolves();
+        sandbox.stub(QueryTools, 'queryIds').resolves([]);
+        sandbox.stub(NetUtils, 'delete').resolves(true);
+        (globalAutoNumberMigrationTool as any).globalAutoNumberSettings = mockGlobalAutoNumbers;
+
+        getMessageStub.withArgs('foundGlobalAutoNumbersToMigrate', [1]).returns('Found 1');
+        getMessageStub.withArgs('startingPostMigrationCleanup').returns('Starting cleanup');
+        getMessageStub.withArgs('postMigrationCleanupCompleted').returns('Cleanup completed');
+        getMessageStub.withArgs('omniGlobalAutoNumberPrefEnabled').returns('Preference enabled');
+
+        // Act
+        const result = await globalAutoNumberMigrationTool.migrate();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(result).to.be.an('array').with.length(1);
+        expect(result[0].name).to.equal('Omni Global Auto Number');
+        expect(result[0].results.size).to.equal(1);
+      });
+    });
+
+    describe('assess with isFoundationPackage', () => {
+      it('should return empty array when isFoundationPackage is true', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+        const queryAllStub = sandbox.stub(QueryTools, 'queryAll');
+        const processGlobalAutoNumberComponentsStub = sandbox.stub(
+          globalAutoNumberMigrationTool as any,
+          'processGlobalAutoNumberComponents'
+        );
+
+        // Act
+        const result = await globalAutoNumberMigrationTool.assess();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(queryAllStub.called).to.be.false; // Should not query when foundation package
+        expect(processGlobalAutoNumberComponentsStub.called).to.be.false; // Should not process
+        expect(result).to.be.an('array').that.is.empty;
+      });
+
+      it('should proceed with assessment when isFoundationPackage is false', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(false);
+        const mockGlobalAutoNumbers = [
+          {
+            Id: '001',
+            Name: 'TestGAN1',
+            Increment__c: 1,
+            LastGeneratedNumber__c: 100,
+            LeftPadDigit__c: 5,
+            MinimumLength__c: 10,
+            Prefix__c: 'TEST',
+            Separator__c: '-',
+          },
+        ];
+
+        const queryAllStub = sandbox.stub(QueryTools, 'queryAll').resolves(mockGlobalAutoNumbers);
+        getMessageStub.withArgs('startingGlobalAutoNumberAssessment').returns('Starting assessment');
+        getMessageStub.withArgs('foundGlobalAutoNumbersToAssess', [1]).returns('Found 1');
+
+        // Act
+        const result = await globalAutoNumberMigrationTool.assess();
+
+        // Assert
+        expect(isFoundationPackageStub.calledOnce).to.be.true;
+        expect(queryAllStub.calledOnce).to.be.true;
+        expect(result).to.be.an('array').with.length(1);
+        expect(result[0].name).to.equal('TestGAN1');
+        expect(result[0].id).to.equal('001');
+      });
+    });
+
+    describe('Foundation Package Edge Cases', () => {
+      it('should handle foundation package check consistently across multiple calls to truncate', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+
+        // Act - Call truncate multiple times
+        await globalAutoNumberMigrationTool.truncate();
+        await globalAutoNumberMigrationTool.truncate();
+
+        // Assert
+        expect(isFoundationPackageStub.callCount).to.equal(2);
+      });
+
+      it('should handle foundation package check consistently across multiple calls to migrate', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+
+        // Act - Call migrate multiple times
+        const result1 = await globalAutoNumberMigrationTool.migrate();
+        const result2 = await globalAutoNumberMigrationTool.migrate();
+
+        // Assert
+        expect(isFoundationPackageStub.callCount).to.equal(2);
+        expect(result1).to.be.an('array').with.length(1);
+        expect(result2).to.be.an('array').with.length(1);
+      });
+
+      it('should handle foundation package check consistently across multiple calls to assess', async () => {
+        // Arrange
+        isFoundationPackageStub.returns(true);
+
+        // Act - Call assess multiple times
+        const result1 = await globalAutoNumberMigrationTool.assess();
+        const result2 = await globalAutoNumberMigrationTool.assess();
+
+        // Assert
+        expect(isFoundationPackageStub.callCount).to.equal(2);
+        expect(result1).to.be.an('array').that.is.empty;
+        expect(result2).to.be.an('array').that.is.empty;
+      });
     });
   });
 });

@@ -441,7 +441,8 @@ export class ExperienceSiteMigration extends BaseRelatedObjectMigration {
     // Look up in osStandardStorage using the object key
     const targetDataFromStorage: OmniScriptStorage = StorageUtil.getStandardOmniScript(storage, lookupKey);
 
-    if (this.shouldAddWarning(targetDataFromStorage)) {
+    if (targetDataFromStorage === undefined || targetDataFromStorage.migrationSuccess === false) {
+      // For the standard wrapper we only need to check the storage empty and migrationSuccess status
       const originalKey = `${currentType}_${currentSubType}_${currentLanguage}`;
       const warningMsg: string = this.getWarningMessage(originalKey, targetDataFromStorage);
       experienceSiteAssessmentInfo.warnings.push(warningMsg);

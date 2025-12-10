@@ -25,6 +25,7 @@ describe('Storage Duplicate Logic - Multiple Versions Handling', () => {
       orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
       dataModel: 'Custom',
       hasValidNamespace: true,
+      isFoundationPackage: false,
     };
     initializeDataModelService(mockOrgDetails);
 
@@ -854,6 +855,7 @@ describe('Storage Duplicate Logic - Multiple Versions Handling', () => {
         orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
         dataModel: 'Standard',
         hasValidNamespace: true,
+        isFoundationPackage: false,
       };
       initializeDataModelService(mockStandardOrgDetails);
 

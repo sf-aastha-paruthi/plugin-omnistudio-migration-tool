@@ -27,6 +27,7 @@ export interface OmnistudioOrgDetails {
   dataModel: string;
   hasValidNamespace: boolean;
   rollbackFlags?: string[];
+  isFoundationPackage: boolean;
 }
 
 export interface PackageDetail {
@@ -35,11 +36,8 @@ export interface PackageDetail {
 }
 
 export class OrgUtils {
-  /**
-   * Skip the 'omnistudio' namespace because it belongs to the foundation package,
-   * which already works with the standard model and does not need migration.
-   * */
   private static readonly namespaces = new Set<string>([
+    'omnistudio', // Adding now as this will also be supported
     'as_dev_01',
     'as_dev_02',
     'as_dev_03',
@@ -282,6 +280,10 @@ export class OrgUtils {
 
   private static readonly standardDataModel = 'Standard';
   private static readonly customDataModel = 'Custom';
+
+  private static readonly omnistudioFoundationPackage = 'Omnistudio Foundation Package';
+  private static readonly vlocityIndustriesManagedPackage = 'Vlocity Industries managed package';
+
   /**
    * Fetches package details (version and namespace) for specific installed packages.
    *
@@ -359,6 +361,7 @@ export class OrgUtils {
         orgDetails: orgDetails[0],
         dataModel: undefined,
         hasValidNamespace: false,
+        isFoundationPackage: false,
       };
     }
 
@@ -368,12 +371,22 @@ export class OrgUtils {
       packageDetails.namespace
     );
 
+    const isFoundationPackage: boolean = await OrgPreferences.isFoundationPackage(connection);
+
+    const orgDataModel = omniStudioOrgPermissionEnabled ? this.standardDataModel : this.customDataModel;
+    const orgPackageType = isFoundationPackage
+      ? this.omnistudioFoundationPackage
+      : this.vlocityIndustriesManagedPackage;
+
+    Logger.log(messages.getMessage('orgUsecaseDetails', [orgDataModel.toLowerCase(), orgPackageType]));
+
     return {
       packageDetails: packageDetails,
       omniStudioOrgPermissionEnabled: omniStudioOrgPermissionEnabled,
       orgDetails: orgDetails[0],
       dataModel: omniStudioOrgPermissionEnabled ? this.standardDataModel : this.customDataModel,
       hasValidNamespace: hasValidNamespace,
+      isFoundationPackage: isFoundationPackage,
     };
   }
 

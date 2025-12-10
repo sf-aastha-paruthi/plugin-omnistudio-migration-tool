@@ -16,7 +16,12 @@ import { XMLUtil } from '../../utils/XMLUtil';
 import { FileDiffUtil } from '../../utils/lwcparser/fileutils/FileDiffUtil';
 import { transformFlexipageBundle } from '../../utils/flexipage/flexiPageTransformer';
 import { Flexipage } from '../interfaces';
-import { DuplicateKeyError, KeyNotFoundInStorageError, TargetPropertyNotFoundError } from '../../error/errorInterfaces';
+import {
+  DuplicateKeyError,
+  KeyNotFoundInStorageError,
+  ProcessingError,
+  TargetPropertyNotFoundError,
+} from '../../error/errorInterfaces';
 import { BaseRelatedObjectMigration } from './BaseRealtedObjectMigration';
 
 /**
@@ -129,7 +134,7 @@ export class FlexipageMigration extends BaseRelatedObjectMigration {
         if (error instanceof KeyNotFoundInStorageError) {
           errors.add(`${error.componentType} ${error.key} can't be migrated`);
           status = mode === 'assess' ? 'Needs manual intervention' : 'Skipped';
-        } else if (error instanceof TargetPropertyNotFoundError) {
+        } else if (error instanceof TargetPropertyNotFoundError || error instanceof ProcessingError) {
           errors.add(error.message);
           status = mode === 'assess' ? 'Needs manual intervention' : 'Skipped';
         } else if (error instanceof DuplicateKeyError) {

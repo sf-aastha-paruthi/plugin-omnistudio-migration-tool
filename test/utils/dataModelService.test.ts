@@ -7,6 +7,7 @@ import {
   getDataModelInfo,
   isStandardDataModel,
   isCustomDataModel,
+  isFoundationPackage,
 } from '../../src/utils/dataModelService';
 import { OmnistudioOrgDetails } from '../../src/utils/orgUtils';
 import { Constants } from '../../src/utils/constants/stringContants';
@@ -27,6 +28,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
       } as OmnistudioOrgDetails;
@@ -43,6 +45,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
@@ -56,6 +59,75 @@ describe('DataModelService', () => {
     });
   });
 
+  describe('isFoundationPackage', () => {
+    it('should return true when isFoundationPackage is true', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+      const dataModelService = new DataModelService(orgs);
+
+      // Act
+      const result = dataModelService.isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.true;
+    });
+
+    it('should return false when isFoundationPackage is false', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: false,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+      const dataModelService = new DataModelService(orgs);
+
+      // Act
+      const result = dataModelService.isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.false;
+    });
+
+    it('should return false when isFoundationPackage is undefined', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+      const dataModelService = new DataModelService(orgs);
+
+      // Act
+      const result = dataModelService.isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.false;
+    });
+
+    it('should return false when isFoundationPackage is null', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: null,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as unknown as OmnistudioOrgDetails;
+      const dataModelService = new DataModelService(orgs);
+
+      // Act
+      const result = dataModelService.isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.false;
+    });
+  });
+
   describe('Global Functions', () => {
     beforeEach(() => {
       // Reset global state before each test
@@ -66,6 +138,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
@@ -78,6 +151,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
       } as OmnistudioOrgDetails;
@@ -123,6 +197,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
@@ -144,6 +219,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
       } as OmnistudioOrgDetails;
@@ -161,6 +237,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
@@ -178,6 +255,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
@@ -195,6 +273,7 @@ describe('DataModelService', () => {
       // Arrange
       const orgs: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
       } as OmnistudioOrgDetails;
@@ -212,11 +291,13 @@ describe('DataModelService', () => {
       // Arrange
       const orgs1: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
       } as OmnistudioOrgDetails;
       const orgs2: OmnistudioOrgDetails = {
         hasValidNamespace: true,
+        isFoundationPackage: false,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
       } as OmnistudioOrgDetails;
@@ -231,6 +312,110 @@ describe('DataModelService', () => {
       // Assert
       expect(result1).to.equal(Constants.CustomDataModel);
       expect(result2).to.equal(Constants.StandardDataModel);
+    });
+  });
+
+  describe('isFoundationPackage - Global Function', () => {
+    it('should return true when foundation package is true', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+
+      initializeDataModelService(orgs);
+
+      // Act
+      const result = isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.true;
+    });
+
+    it('should return false when foundation package is false', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: false,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+
+      initializeDataModelService(orgs);
+
+      // Act
+      const result = isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.false;
+    });
+
+    it('should return false when foundation package is undefined', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+
+      initializeDataModelService(orgs);
+
+      // Act
+      const result = isFoundationPackage();
+
+      // Assert
+      expect(result).to.be.false;
+    });
+
+    it('should cache foundation package value on subsequent calls', () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+
+      initializeDataModelService(orgs);
+
+      // Act
+      const result1 = isFoundationPackage();
+      const result2 = isFoundationPackage();
+
+      // Assert
+      expect(result1).to.be.true;
+      expect(result2).to.be.true;
+      // Both calls should return the same cached result
+      expect(result1).to.equal(result2);
+    });
+
+    it('should reset cache when initializeDataModelService is called again', () => {
+      // Arrange
+      const orgs1: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+      } as OmnistudioOrgDetails;
+      const orgs2: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        isFoundationPackage: false,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: true,
+      } as OmnistudioOrgDetails;
+
+      // Act
+      initializeDataModelService(orgs1);
+      const result1 = isFoundationPackage();
+
+      initializeDataModelService(orgs2);
+      const result2 = isFoundationPackage();
+
+      // Assert
+      expect(result1).to.be.true;
+      expect(result2).to.be.false;
     });
   });
 });

@@ -515,4 +515,222 @@ describe('OrgPreferences', () => {
       expect(metadataUpdateStub.calledOnce).to.be.true;
     });
   });
+
+  describe('isFoundationPackage', () => {
+    it('should return true when foundation package (omnistudio) is the first installed package', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'omnistudio',
+          },
+        ],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.true;
+      expect(queryStub.calledOnce).to.be.true;
+      expect(queryStub.firstCall.args[0]).to.include('SELECT DeveloperName, Value FROM OmniInteractionConfig');
+      expect(queryStub.firstCall.args[0]).to.include("WHERE DeveloperName = 'TheFirstInstalledOmniPackage'");
+    });
+
+    it('should return false when a different package is the first installed package', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+        ],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when no records are found', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 0,
+        records: [],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when totalSize is null', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: null,
+        records: [],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when totalSize is undefined', async () => {
+      // Arrange
+      const queryResult = {
+        records: [],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when Value is empty string', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: '',
+          },
+        ],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when Value is null', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: null,
+          },
+        ],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when query fails with Error object', async () => {
+      // Arrange
+      const error = new Error('Query failed');
+      const queryStub = sandbox.stub().rejects(error);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when query fails with non-Error object', async () => {
+      // Arrange
+      const error = 'String error message';
+      const queryStub = sandbox.stub().rejects(error);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when query result is undefined', async () => {
+      // Arrange
+      const queryStub = sandbox.stub().resolves(undefined);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should return false when query result is null', async () => {
+      // Arrange
+      const queryStub = sandbox.stub().resolves(null);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+
+    it('should handle case-sensitive package name correctly', async () => {
+      // Arrange
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'OmniStudio', // Wrong case
+          },
+        ],
+      };
+      const queryStub = sandbox.stub().resolves(queryResult);
+      connection.query = queryStub;
+
+      // Act
+      const result = await OrgPreferences.isFoundationPackage(connection);
+
+      // Assert
+      expect(result).to.be.false;
+      expect(queryStub.calledOnce).to.be.true;
+    });
+  });
 });

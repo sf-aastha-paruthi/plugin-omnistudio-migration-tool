@@ -13,6 +13,7 @@ import { TemplateParser } from '../templateParser/generate';
 import { getOrgDetailsForReport } from '../reportGenerator/reportUtil';
 import { CustomLabelAssessmentInfo } from '../customLabels';
 import { Logger } from '../logger';
+import { isFoundationPackage } from '../dataModelService';
 import { OSAssessmentReporter } from './OSAssessmentReporter';
 import { ApexAssessmentReporter } from './ApexAssessmentReporter';
 import { IPAssessmentReporter } from './IPAssessmentReporter';
@@ -64,9 +65,14 @@ export class AssessmentReporter {
         Constants.Flexcard,
         Constants.IntegrationProcedure,
         Constants.DataMapper,
-        Constants.GlobalAutoNumber,
         Constants.CustomLabel
       );
+
+      // Only add GlobalAutoNumber if it's not a foundation package
+      if (!isFoundationPackage()) {
+        reports.push(Constants.GlobalAutoNumber);
+      }
+
       this.createDocument(
         path.join(this.basePath, this.omniscriptAssessmentFileName),
         TemplateParser.generate(
@@ -119,18 +125,21 @@ export class AssessmentReporter {
         )
       );
 
-      this.createDocument(
-        path.join(this.basePath, this.globalAutoNumberAssessmentFileName),
-        TemplateParser.generate(
-          assessmentReportTemplate,
-          GlobalAutoNumberAssessmentReporter.getGlobalAutoNumberAssessmentData(
-            result.globalAutoNumberAssessmentInfos,
-            instanceUrl,
-            omnistudioOrgDetails
-          ),
-          messages
-        )
-      );
+      // Only generate GlobalAutoNumber reports if it's not a foundation package
+      if (!isFoundationPackage()) {
+        this.createDocument(
+          path.join(this.basePath, this.globalAutoNumberAssessmentFileName),
+          TemplateParser.generate(
+            assessmentReportTemplate,
+            GlobalAutoNumberAssessmentReporter.getGlobalAutoNumberAssessmentData(
+              result.globalAutoNumberAssessmentInfos,
+              instanceUrl,
+              omnistudioOrgDetails
+            ),
+            messages
+          )
+        );
+      }
 
       // Generate custom labels report with pagination
       const customLabels = result.customLabelAssessmentInfos || [];
@@ -209,18 +218,21 @@ export class AssessmentReporter {
 
         case Constants.GlobalAutoNumber:
           reports.push(Constants.GlobalAutoNumber);
-          this.createDocument(
-            path.join(this.basePath, this.globalAutoNumberAssessmentFileName),
-            TemplateParser.generate(
-              assessmentReportTemplate,
-              GlobalAutoNumberAssessmentReporter.getGlobalAutoNumberAssessmentData(
-                result.globalAutoNumberAssessmentInfos,
-                instanceUrl,
-                omnistudioOrgDetails
-              ),
-              messages
-            )
-          );
+          // Skip document creation for foundation package as feature is not supported
+          if (!isFoundationPackage()) {
+            this.createDocument(
+              path.join(this.basePath, this.globalAutoNumberAssessmentFileName),
+              TemplateParser.generate(
+                assessmentReportTemplate,
+                GlobalAutoNumberAssessmentReporter.getGlobalAutoNumberAssessmentData(
+                  result.globalAutoNumberAssessmentInfos,
+                  instanceUrl,
+                  omnistudioOrgDetails
+                ),
+                messages
+              )
+            );
+          }
           break;
 
         case Constants.CustomLabel:
@@ -397,11 +409,16 @@ export class AssessmentReporter {
       });
     }
     if (reports.includes(Constants.GlobalAutoNumber)) {
+      // Show "Feature not supported" for foundation package orgs
+      const isFoundationPkg = omnistudioOrgDetails.isFoundationPackage;
       summaryItems.push({
         name: 'Omni Global Auto Numbers',
-        total: result.globalAutoNumberAssessmentInfos.length,
-        data: GlobalAutoNumberAssessmentReporter.getSummaryData(result.globalAutoNumberAssessmentInfos),
+        total: isFoundationPkg ? 0 : result.globalAutoNumberAssessmentInfos.length,
+        data: isFoundationPkg
+          ? [{ name: 'Feature not supported', count: 0, cssClass: 'text-warning' }]
+          : GlobalAutoNumberAssessmentReporter.getSummaryData(result.globalAutoNumberAssessmentInfos),
         file: this.globalAutoNumberAssessmentFileName,
+        ...(isFoundationPkg && { showDetails: false }),
       });
     }
     if (reports.includes(Constants.Apex)) {

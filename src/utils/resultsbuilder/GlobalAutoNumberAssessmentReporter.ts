@@ -21,11 +21,13 @@ export class GlobalAutoNumberAssessmentReporter {
     omnistudioOrgDetails: OmnistudioOrgDetails
   ): ReportParam {
     Logger.captureVerboseData('GAN data', globalAutoNumberAssessmentInfos);
+
     return {
       title: 'Omni Global Auto Numbers Assessment Report',
       heading: 'Omni Global Auto Numbers Assessment Report',
       org: getOrgDetailsForReport(omnistudioOrgDetails),
       assessmentDate: new Date().toLocaleString(),
+      reportType: 'globalautonumber',
       total: globalAutoNumberAssessmentInfos?.length || 0,
       filterGroups: this.getFilterGroupsForReport(globalAutoNumberAssessmentInfos),
       headerGroups: this.getHeaderGroupsForReport(),
@@ -38,7 +40,6 @@ export class GlobalAutoNumberAssessmentReporter {
             )
           : undefined,
       callToAction: reportingHelper.getCallToAction(globalAutoNumberAssessmentInfos),
-      reportType: 'globalautonumber', // Identifier for Global Auto Number specific CSS styling
     };
   }
 

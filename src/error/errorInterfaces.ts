@@ -28,3 +28,14 @@ export class TargetPropertyNotFoundError extends Error {
     this.componentName = componentName;
   }
 }
+
+export class ProcessingError extends Error {
+  public componentType: string;
+  public key: string;
+
+  public constructor(key: string, componentType: string) {
+    super(`Key ${key} can not be processed`);
+    this.key = key;
+    this.componentType = componentType;
+  }
+}

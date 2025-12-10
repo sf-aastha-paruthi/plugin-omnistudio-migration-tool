@@ -15,6 +15,7 @@ describe('NameMappingRegistry', () => {
       orgDetails: { Name: 'Test Org', Id: '00D000000000000' },
       dataModel: 'Custom',
       hasValidNamespace: true,
+      isFoundationPackage: false,
     };
     initializeDataModelService(mockOrgDetails);
 
@@ -333,6 +334,7 @@ describe('NameMappingRegistry', () => {
         orgDetails: { Name: 'Standard Test Org', Id: '00D000000000001' },
         dataModel: 'Standard',
         hasValidNamespace: false,
+        isFoundationPackage: false,
       };
       initializeDataModelService(mockStandardOrgDetails);
 

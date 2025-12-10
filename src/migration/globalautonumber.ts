@@ -14,6 +14,7 @@ import { createProgressBar } from './base';
 import { OrgPreferences } from '../utils/orgPreferences';
 import { OmnistudioSettingsPrefManager } from '../utils/OmnistudioSettingsPrefManager';
 import { Constants } from '../utils/constants/stringContants';
+import { isFoundationPackage } from '../utils/dataModelService';
 
 export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements MigrationTool {
   private prefManager: OmnistudioSettingsPrefManager;
@@ -46,6 +47,10 @@ export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements 
   }
 
   public async truncate(): Promise<void> {
+    if (isFoundationPackage()) {
+      return;
+    }
+
     try {
       // Perform pre-migration checks before truncation
       await this.performPreMigrationChecks();
@@ -60,6 +65,17 @@ export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements 
   }
 
   public async migrate(): Promise<MigrationResult[]> {
+    if (isFoundationPackage()) {
+      // Return a result with empty data so the dashboard can show a tile
+      return [
+        {
+          name: this.getName(),
+          results: new Map<string, UploadRecordResult>(),
+          records: new Map<string, any>(),
+        },
+      ];
+    }
+
     // Perform pre-migration checks before migration
     await this.performPreMigrationChecks();
 
@@ -274,6 +290,10 @@ export class GlobalAutoNumberMigrationTool extends BaseMigrationTool implements 
   }
 
   public async assess(): Promise<GlobalAutoNumberAssessmentInfo[]> {
+    if (isFoundationPackage()) {
+      return [];
+    }
+
     try {
       DebugTimer.getInstance().lap('Query GlobalAutoNumber settings');
       Logger.logVerbose(this.messages.getMessage('startingGlobalAutoNumberAssessment'));

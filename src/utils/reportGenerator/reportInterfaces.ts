@@ -16,6 +16,7 @@ export interface SummaryItemParam {
   total: number;
   data: SummaryItemDetailParam[];
   file: string;
+  showDetails?: boolean; // Set to false to hide counts and view report button
 }
 
 export interface SummaryItemDetailParam {

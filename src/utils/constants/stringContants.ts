@@ -40,4 +40,7 @@ export const Constants = {
   CustomLabelErrorStatus: 'error',
   CustomLabelDuplicateStatus: 'duplicate',
   CustomLabelSameValueMessage: 'same value',
+
+  // Package constants
+  FoundationPackageName: 'omnistudio',
 };

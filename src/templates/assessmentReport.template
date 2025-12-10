@@ -73,13 +73,13 @@
               <div class="label-value">{{org.dataModel}}</div>
             </div>
 
-            <div class="org-details-section">
-              <div class="label-key">Assessment Date and Time</div>
-              <div class="label-value">{{assessmentDate}}</div>
-            </div>
+          <div class="org-details-section">
+            <div class="label-key">Assessment Date and Time</div>
+            <div class="label-value">{{assessmentDate}}</div>
           </div>
+        </div>
 
-          <div class="filter-dropdown-container">
+        <div class="filter-dropdown-container">
             <div class="filter-header-bar">
               <!-- Row count display -->
               <div class="row-count-display" id="row-count">Loading Records...</div>

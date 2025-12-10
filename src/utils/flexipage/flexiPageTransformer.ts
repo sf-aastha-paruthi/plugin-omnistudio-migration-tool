@@ -5,7 +5,12 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { DuplicateKeyError, KeyNotFoundInStorageError, TargetPropertyNotFoundError } from '../../error/errorInterfaces';
+import {
+  DuplicateKeyError,
+  KeyNotFoundInStorageError,
+  ProcessingError,
+  TargetPropertyNotFoundError,
+} from '../../error/errorInterfaces';
 import {
   Flexipage,
   FlexiComponentInstanceProperty,
@@ -177,6 +182,10 @@ function createNewPropsForOmniScript(
     throw new KeyNotFoundInStorageError(nameKey, 'Omniscript');
   }
 
+  if (!migratedScriptName.migrationSuccess) {
+    throw new ProcessingError(nameKey, 'Omniscript');
+  }
+
   if (migratedScriptName.isDuplicate) {
     throw new DuplicateKeyError(nameKey, 'Omniscript');
   }
@@ -213,6 +222,10 @@ function createNewPropsForFlexCard(
 
   if (!migratedCardName) {
     throw new KeyNotFoundInStorageError(nameKey, 'Flexcard');
+  }
+
+  if (!migratedCardName.migrationSuccess) {
+    throw new ProcessingError(nameKey, 'Flexcard');
   }
 
   if (migratedCardName.isDuplicate) {
@@ -253,8 +266,14 @@ function createNewPropsForStandardOmniScript(
   // Look up in osStandardStorage using the object key
   const targetDataFromStorage: OmniScriptStorage | undefined = StorageUtil.getStandardOmniScript(storage, lookupKey);
 
+  const nameKey = `${currentType}_${currentSubType}_${currentLanguage}`;
+
   if (!targetDataFromStorage) {
-    throw new KeyNotFoundInStorageError(`${currentType}_${currentSubType}_${currentLanguage}`, 'Omniscript');
+    throw new KeyNotFoundInStorageError(nameKey, 'Omniscript');
+  }
+
+  if (!targetDataFromStorage.migrationSuccess) {
+    throw new ProcessingError(nameKey, 'Omniscript');
   }
 
   // Return the new properties
@@ -285,6 +304,10 @@ function createNewPropsForStandardFlexCard(
 
   if (targetDataFromStorage.isDuplicate) {
     throw new DuplicateKeyError(currentFlexCardName, 'Flexcard');
+  }
+
+  if (!targetDataFromStorage.migrationSuccess) {
+    throw new ProcessingError(currentFlexCardName, 'Flexcard');
   }
 
   if (targetDataFromStorage.error) {

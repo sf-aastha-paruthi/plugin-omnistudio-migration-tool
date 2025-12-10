@@ -125,7 +125,9 @@ export class ResultsBuilder {
     }
     const rollbackFlags = orgDetails.rollbackFlags || [];
     const flags = rollbackFlagNames.filter((flag) => rollbackFlags.includes(flag));
-    const data: ReportParam = {
+
+    // Common report fields
+    const baseData: ReportParam = {
       title: `${getMigrationHeading(result.name)} Migration Report`,
       heading: `${getMigrationHeading(result.name)} Migration Report`,
       org: {
@@ -135,6 +137,19 @@ export class ResultsBuilder {
         dataModel: orgDetails.dataModel,
       },
       assessmentDate: new Date().toLocaleString(),
+      total: 0,
+      filterGroups: [],
+      headerGroups: [],
+      rows: [],
+    };
+
+    // If Global Auto Number and foundation package, skip document creation as feature is not supported
+    if (isGlobalAutoNumber && orgDetails.isFoundationPackage) {
+      return;
+    }
+
+    const data: ReportParam = {
+      ...baseData,
       total: result.data?.length || 0,
       filterGroups: [...this.getStatusFilterGroup(result.data?.map((item) => item.status) || [])],
       headerGroups: [...this.getHeaderGroupsForReport(componentName, isGlobalAutoNumber)],
@@ -840,6 +855,20 @@ export class ResultsBuilder {
               total: totalLabels,
               data: this.getCustomLabelStatusData(result.data, result.totalCount),
               file: fileName,
+            };
+          }
+
+          // Handle Global Auto Numbers in foundation package (not supported)
+          const isGlobalAutoNumber =
+            result.name.toLowerCase().includes('global auto number') ||
+            result.name.toLowerCase().includes('globalautonumber');
+          if (isGlobalAutoNumber && orgDetails.isFoundationPackage) {
+            return {
+              name: `${getMigrationHeading(result.name)}`,
+              total: 0,
+              data: [{ name: 'Feature not supported', count: 0, cssClass: 'text-warning' }],
+              file: result.name.replace(/ /g, '_').replace(/\//g, '_') + '.html',
+              showDetails: false,
             };
           }
 

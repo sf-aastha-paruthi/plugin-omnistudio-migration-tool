@@ -7,6 +7,7 @@ import {
   MetadataInfo,
 } from './interfaces';
 import { Logger } from './logger';
+import { Constants } from './constants/stringContants';
 
 /**
  * Class to manage OmniStudio organization preferences
@@ -203,6 +204,28 @@ export class OrgPreferences {
       // TODO: What should be the default behavior if the query fails?
       const errMsg = error instanceof Error ? error.message : String(error);
       Logger.error(`Error checking standard designer for namespace ${namespaceToModify}: ${errMsg}`);
+      return false;
+    }
+  }
+
+  public static async isFoundationPackage(connection: Connection): Promise<boolean> {
+    try {
+      const query = `SELECT DeveloperName, Value FROM OmniInteractionConfig
+      WHERE DeveloperName = 'TheFirstInstalledOmniPackage'`;
+
+      const result = await connection.query(query);
+      if (result?.totalSize === 1) {
+        const records = result.records as Array<{ DeveloperName: string; Value: string }>;
+
+        if (records[0].Value === Constants.FoundationPackageName) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      Logger.error(`Error checking foundation package : ${errMsg}`);
       return false;
     }
   }

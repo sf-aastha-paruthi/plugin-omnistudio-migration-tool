@@ -57,6 +57,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'ValidNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const validator = new ValidatorService(orgs, messages, connection);
 
@@ -74,6 +75,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: false,
         packageDetails: { namespace: 'InvalidNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       (messages.getMessage as sinon.SinonStub)
         .withArgs('unknownNamespace')
@@ -95,6 +97,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: false,
         packageDetails: null,
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as unknown as OmnistudioOrgDetails;
       (messages.getMessage as sinon.SinonStub)
         .withArgs('unknownNamespace')
@@ -118,6 +121,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const validator = new ValidatorService(orgs, messages, connection);
 
@@ -135,6 +139,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: null,
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as unknown as OmnistudioOrgDetails;
       (messages.getMessage as sinon.SinonStub).withArgs('noPackageInstalled').returns('No package installed');
       const validator = new ValidatorService(orgs, messages, connection);
@@ -154,6 +159,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: undefined,
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as unknown as OmnistudioOrgDetails;
       (messages.getMessage as sinon.SinonStub).withArgs('noPackageInstalled').returns('No package installed');
       const validator = new ValidatorService(orgs, messages, connection);
@@ -175,6 +181,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -200,6 +207,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '1' }],
@@ -221,6 +229,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [],
@@ -244,6 +253,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '0' }],
@@ -267,6 +277,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       (connection.query as sinon.SinonStub).resolves(null);
       const validator = new ValidatorService(orgs, messages, connection);
@@ -284,6 +295,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {};
       (connection.query as sinon.SinonStub).resolves(queryResult);
@@ -302,6 +314,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const error = new Error('Database connection failed');
       (connection.query as sinon.SinonStub).rejects(error);
@@ -324,6 +337,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const error = 'String error message';
       (connection.query as sinon.SinonStub).rejects(error);
@@ -344,6 +358,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '10' }],
@@ -364,6 +379,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: 'invalid' }],
@@ -388,6 +404,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -415,6 +432,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -442,6 +460,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -466,6 +485,514 @@ describe('ValidatorService', () => {
     });
   });
 
+  describe('validateOmniInteractionConfig', () => {
+    it('should return true when totalSize is 1 and DeveloperName is TheFirstInstalledOmniPackage with foundation package', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: true,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'omnistudio',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [1]).returns('Query returned 1 result');
+      (messages.getMessage as sinon.SinonStub).withArgs('packageDetails').returns('Package details found');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.true;
+      expect((connection.query as sinon.SinonStub).calledOnce).to.be.true;
+      expect((connection.query as sinon.SinonStub).firstCall.args[0]).to.include(
+        'SELECT DeveloperName, Value FROM OmniInteractionConfig'
+      );
+      expect((connection.query as sinon.SinonStub).firstCall.args[0]).to.include(
+        "WHERE DeveloperName IN ('TheFirstInstalledOmniPackage', 'InstalledIndustryPackage')"
+      );
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 1 result')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Package details found')).to.be.true;
+    });
+
+    it('should return false when totalSize is 1 but DeveloperName is not TheFirstInstalledOmniPackage', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'omnistudio',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [1]).returns('Query returned 1 result');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 1 result')).to.be.true;
+    });
+
+    it('should return false when totalSize is 1 but Value is not foundation package', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [1]).returns('Query returned 1 result');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+    });
+
+    it('should return false when totalSize is 2 and first record has foundation package value', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 2,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'omnistudio',
+          },
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'vlocity_ins',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [2]).returns('Query returned 2 results');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 2 results')).to.be.true;
+    });
+
+    it('should return false when totalSize is 2 and second record has foundation package value', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 2,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'omnistudio',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [2]).returns('Query returned 2 results');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 2 results')).to.be.true;
+    });
+
+    it('should return true when totalSize is 2 and both records have the same non-foundation package value', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 2,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'vlocity_ins',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [2]).returns('Query returned 2 results');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveSameValue')
+        .returns('Both packages have the same value');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 2 results')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Both packages have the same value')).to.be.true;
+    });
+
+    it('should return false when totalSize is 2 and records have different non-foundation package values', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 2,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'vlocity_cmt',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [2]).returns('Query returned 2 results');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveDifferentValue')
+        .returns('Packages have different values');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerLogVerboseStub.calledWith('Query returned 2 results')).to.be.true;
+      expect(loggerErrorStub.calledWith('Packages have different values')).to.be.true;
+    });
+
+    it('should return false when totalSize is 0', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 0,
+        records: [],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveDifferentValue')
+        .returns('Packages have different values');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Packages have different values')).to.be.true;
+    });
+
+    it('should return false when totalSize is greater than 2', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 3,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'vlocity_ins',
+          },
+          {
+            DeveloperName: 'InstalledIndustryPackage',
+            Value: 'vlocity_ins',
+          },
+          {
+            DeveloperName: 'SomeOtherPackage',
+            Value: 'vlocity_cmt',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveDifferentValue')
+        .returns('Packages have different values');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Packages have different values')).to.be.true;
+    });
+
+    it('should return false when query result is null', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      (connection.query as sinon.SinonStub).resolves(null);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveDifferentValue')
+        .returns('Packages have different values');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Packages have different values')).to.be.true;
+    });
+
+    it('should return false when query result is undefined', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      (connection.query as sinon.SinonStub).resolves(undefined);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('packagesHaveDifferentValue')
+        .returns('Packages have different values');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Packages have different values')).to.be.true;
+    });
+
+    it('should return false when query throws an Error', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const error = new Error('Query failed');
+      (connection.query as sinon.SinonStub).rejects(error);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('failedToCheckPackagesValue')
+        .returns('Failed to check packages value');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Failed to check packages value')).to.be.true;
+    });
+
+    it('should return false when query throws a non-Error object', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const error = 'String error message';
+      (connection.query as sinon.SinonStub).rejects(error);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('failedToCheckPackagesValue')
+        .returns('Failed to check packages value');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+      expect(loggerErrorStub.calledWith('Failed to check packages value')).to.be.true;
+    });
+
+    it('should handle case-sensitive package name correctly', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: 'OmniStudio', // Wrong case
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [1]).returns('Query returned 1 result');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+    });
+
+    it('should handle empty string values in records', async () => {
+      // Arrange
+      const orgs: OmnistudioOrgDetails = {
+        hasValidNamespace: true,
+        packageDetails: { namespace: 'TestNamespace' },
+        omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
+      } as OmnistudioOrgDetails;
+      const queryResult = {
+        totalSize: 1,
+        records: [
+          {
+            DeveloperName: 'TheFirstInstalledOmniPackage',
+            Value: '',
+          },
+        ],
+      };
+      (connection.query as sinon.SinonStub).resolves(queryResult);
+      (messages.getMessage as sinon.SinonStub)
+        .withArgs('validatingOmniInteractionConfig')
+        .returns('Validating OmniInteractionConfig');
+      (messages.getMessage as sinon.SinonStub).withArgs('queryResultSize', [1]).returns('Query returned 1 result');
+      const validator = new ValidatorService(orgs, messages, connection);
+
+      // Act
+      const result = await validator.validateOmniInteractionConfig();
+
+      // Assert
+      expect(result).to.be.false;
+      expect(loggerLogVerboseStub.calledWith('Validating OmniInteractionConfig')).to.be.true;
+    });
+  });
+
   describe('validate', () => {
     it('should return true when all validations pass for custom data model', async () => {
       // Arrange
@@ -473,6 +1000,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -499,10 +1027,18 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: true,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       isStandardDataModelStub.returns(true); // Standard data model
       omnistudioSettingsPrefManagerStub.resolves(false); // Metadata not enabled
       sandbox.stub(OrgPreferences, 'checkDRVersioning').resolves(false);
+
+      // Mock the OmniInteractionConfig query that's called by validateOmniInteractionConfig
+      (connection.query as sinon.SinonStub).resolves({
+        totalSize: 1,
+        records: [{ DeveloperName: 'TheFirstInstalledOmniPackage', Value: 'omnistudio' }],
+      });
+
       const validator = new ValidatorService(orgs, messages, connection);
 
       // Act
@@ -510,7 +1046,7 @@ describe('ValidatorService', () => {
 
       // Assert
       expect(result).to.be.true;
-      expect((connection.query as sinon.SinonStub).called).to.be.false; // License validation should be skipped
+      expect((connection.query as sinon.SinonStub).calledOnce).to.be.true; // OmniInteractionConfig query is called
       expect(omnistudioSettingsPrefManagerStub.calledOnce).to.be.true;
     });
 
@@ -545,6 +1081,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: null,
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as unknown as OmnistudioOrgDetails;
       (messages.getMessage as sinon.SinonStub).withArgs('noPackageInstalled').returns('No package');
       isStandardDataModelStub.returns(false);
@@ -564,6 +1101,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [],
@@ -587,6 +1125,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const error = new Error('Connection error');
       (connection.query as sinon.SinonStub).rejects(error);
@@ -607,6 +1146,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: false,
         packageDetails: { namespace: 'InvalidNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
@@ -637,6 +1177,7 @@ describe('ValidatorService', () => {
         hasValidNamespace: true,
         packageDetails: { namespace: 'TestNamespace' },
         omniStudioOrgPermissionEnabled: false,
+        isFoundationPackage: false,
       } as OmnistudioOrgDetails;
       const queryResult = {
         records: [{ total: '5' }],
