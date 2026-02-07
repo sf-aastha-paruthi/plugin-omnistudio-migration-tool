@@ -450,7 +450,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
 
       // Check for Integration Procedure Action dependencies
-      if (type === 'Integration Procedure Action') {
+      if (type === Constants.IntegrationProcedureAction) {
         const nameVal = `${elemName}`;
         dependencyIP.push({ name: propertySet['integrationProcedureKey'], location: nameVal });
         if (!existingOmniscriptNames.has(nameVal) && !existingFlexCardNames.has(nameVal)) {
@@ -461,10 +461,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       // Check for DataRaptor dependencies
       if (
         [
-          'DataRaptor Extract Action',
-          'DataRaptor Turbo Action',
-          'DataRaptor Transform Action',
-          'DataRaptor Post Action',
+          Constants.DataRaptorExtractAction,
+          Constants.DataRaptorTurboAction,
+          Constants.DataRaptorTransformAction,
+          Constants.DataRaptorPostAction,
         ].includes(type)
       ) {
         const nameVal = `${elemName}`;
@@ -474,7 +474,27 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         }
       }
 
-      if (type === 'Remote Action') {
+      // Check for DataRaptor transform bundle dependencies in various action types
+      // These bundles are used for pre/post transformation in HTTP, Remote, Decision Matrix, Expression Set, PDF, and Step actions
+      this.collectTransformBundleDependencies(propertySet, elemName, dependencyDR, existingDataRaptorNames, missingDR);
+
+      // Check for DocuSign Envelope Action transform bundle dependencies
+      if (type === Constants.DocuSignEnvelopeAction) {
+        this.collectDocuSignBundleDependencies(propertySet, elemName, dependencyDR, existingDataRaptorNames, missingDR);
+      }
+
+      // Check for DocuSign Signature Action transform bundle dependencies
+      if (type === Constants.DocuSignSignatureAction) {
+        this.collectDocuSignSignatureBundleDependencies(
+          propertySet,
+          elemName,
+          dependencyDR,
+          existingDataRaptorNames,
+          missingDR
+        );
+      }
+
+      if (type === Constants.RemoteAction) {
         const nameVal = `${elemName}`;
         const className = propertySet['remoteClass'];
         const methodName = propertySet['remoteMethod'];
@@ -486,7 +506,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         dependenciesRA.push({ name: propertySet['optionSource']['source'], location: nameVal });
       }
 
-      if (type === 'Custom Lightning Web Component') {
+      if (type === Constants.CustomLightningWebComponent) {
         const nameVal = `${elemName}`;
         const lwcName = propertySet['lwcName'];
         dependenciesLWC.push({ name: lwcName, location: nameVal });
@@ -498,6 +518,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         dependenciesLWC.push({ name: lwcName, location: nameVal });
       }
     }
+
+    // Collect persistent component bundle dependencies from OmniProcess PropertySetConfig
+    this.collectPersistentComponentBundleDependencies(omniscript, dependencyDR, existingDataRaptorNames, missingDR);
 
     const omniProcessType = omniscript[this.getFieldKey('IsProcedure__c')] ? 'Integration Procedure' : 'OmniScript';
 
@@ -664,23 +687,36 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
     }
 
+    // Deduplicate all dependency arrays to ensure no duplicates
+    // For Remote Actions and LWCs, deduplicate by name property
+    const uniqueRA = Array.from(new Map(dependenciesRA.map((item) => [item.name, item])).values());
+    const uniqueLWC = Array.from(new Map(dependenciesLWC.map((item) => [item.name, item])).values());
+    const uniqueIP = Array.from(new Map(dependencyIP.map((item) => [item.name, item])).values());
+    const uniqueDR = Array.from(new Map(dependencyDR.map((item) => [item.name, item])).values());
+    const uniqueOS = Array.from(new Map(dependencyOS.map((item) => [item.name, item])).values());
+
+    // Deduplicate missing dependency arrays (simple string arrays)
+    const uniqueMissingDR = [...new Set(missingDR)];
+    const uniqueMissingIP = [...new Set(missingIP)];
+    const uniqueMissingOS = [...new Set(missingOS)];
+
     const result: OSAssessmentInfo = {
       name: recordName,
       id: omniscript['Id'],
       oldName: oldName,
-      dependenciesIP: dependencyIP,
-      dependenciesDR: dependencyDR,
-      dependenciesOS: dependencyOS,
-      dependenciesRemoteAction: dependenciesRA,
-      dependenciesLWC: dependenciesLWC,
+      dependenciesIP: uniqueIP,
+      dependenciesDR: uniqueDR,
+      dependenciesOS: uniqueOS,
+      dependenciesRemoteAction: uniqueRA,
+      dependenciesLWC: uniqueLWC,
       infos: [],
       warnings: warnings,
       errors: [],
       migrationStatus: assessmentStatus,
       type: omniProcessType,
-      missingDR: missingDR,
-      missingIP: missingIP,
-      missingOS: missingOS,
+      missingDR: uniqueMissingDR,
+      missingIP: uniqueMissingIP,
+      missingOS: uniqueMissingOS,
     };
 
     if (omniProcessType === this.OMNISCRIPT) {
@@ -1754,6 +1790,18 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
 
     mappedObject['Name'] = this.cleanName(mappedObject['Name']);
 
+    // Process PropertySetConfig to update persistentComponent transform bundle references
+    const propertySetConfig = mappedObject[OmniScriptMappings.PropertySet__c];
+    if (propertySetConfig) {
+      try {
+        const parsedConfig = JSON.parse(propertySetConfig);
+        this.processPersistentComponents(parsedConfig);
+        mappedObject[OmniScriptMappings.PropertySet__c] = JSON.stringify(parsedConfig);
+      } catch (ex) {
+        Logger.error(`Failed to parse PropertySetConfig for OmniScript: ${mappedObject['Name']}`);
+      }
+    }
+
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
       type: OmniScriptMigrationTool.OMNIPROCESS_NAME,
@@ -1761,6 +1809,44 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     };
 
     return mappedObject;
+  }
+
+  /**
+   * Processes persistentComponent array in OmniProcess PropertySetConfig to update transform bundle references
+   * Handles: persistentComponent[].remoteOptions.preTransformBundle, persistentComponent[].remoteOptions.postTransformBundle,
+   *          persistentComponent[].preTransformBundle, persistentComponent[].postTransformBundle
+   * @param propertySetConfig The parsed PropertySetConfig object
+   */
+  private processPersistentComponents(propertySetConfig: any): void {
+    if (!propertySetConfig || !Array.isArray(propertySetConfig.persistentComponent)) {
+      return;
+    }
+
+    propertySetConfig.persistentComponent.forEach((component: any) => {
+      if (!component) {
+        return;
+      }
+
+      // Handle remoteOptions pre/post transform bundles
+      if (component.remoteOptions) {
+        if (component.remoteOptions.preTransformBundle) {
+          component.remoteOptions.preTransformBundle = this.cleanBundleName(component.remoteOptions.preTransformBundle);
+        }
+        if (component.remoteOptions.postTransformBundle) {
+          component.remoteOptions.postTransformBundle = this.cleanBundleName(
+            component.remoteOptions.postTransformBundle
+          );
+        }
+      }
+
+      // Handle direct pre/post transform bundles
+      if (component.preTransformBundle) {
+        component.preTransformBundle = this.cleanBundleName(component.preTransformBundle);
+      }
+      if (component.postTransformBundle) {
+        component.postTransformBundle = this.cleanBundleName(component.postTransformBundle);
+      }
+    });
   }
 
   // Maps an individual Element into an OmniProcessElement record
@@ -1805,139 +1891,10 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const elementType = mappedObject[ElementMappings.Type__c];
     const propertySet = JSON.parse(mappedObject[ElementMappings.PropertySet__c] || '{}');
 
-    // Use NameMappingRegistry to update all dependency references
-    const updatedPropertySet = this.nameRegistry.updateDependencyReferences(propertySet);
+    // Use shared method to process element types
+    this.processElementByType(elementType, propertySet, invalidIpReferences, mappedObject[ElementMappings.Name]);
 
-    switch (elementType) {
-      case 'OmniScript':
-        // Use registry for OmniScript references with explicit fallback
-        const osType = propertySet['Type'] || '';
-        const osSubType = propertySet['Sub Type'] || '';
-        const osLanguage = propertySet['Language'] || 'English';
-
-        // Construct full OmniScript name to check registry
-        const fullOmniScriptName = `${osType}_${osSubType}_${osLanguage}`;
-
-        if (this.nameRegistry.isAngularOmniScript(fullOmniScriptName)) {
-          // Referenced OmniScript is Angular - add warning and keep original reference
-          Logger.logVerbose(
-            `\n${this.messages.getMessage('angularOmniScriptDependencyWarning', [
-              'OmniScript element',
-              fullOmniScriptName,
-            ])}`
-          );
-          // Keep original reference as-is since Angular OmniScript won't be migrated
-          updatedPropertySet['Type'] = osType;
-          updatedPropertySet['Sub Type'] = osSubType;
-          updatedPropertySet['Language'] = osLanguage;
-        } else if (this.nameRegistry.hasOmniScriptMapping(fullOmniScriptName)) {
-          // Registry has mapping for this LWC OmniScript - extract cleaned parts
-          const cleanedFullName = this.nameRegistry.getCleanedName(fullOmniScriptName, 'OmniScript');
-          const parts = cleanedFullName.split('_');
-
-          if (parts.length >= 2) {
-            updatedPropertySet['Type'] = parts[0];
-            updatedPropertySet['Sub Type'] = parts[1];
-            // Language doesn't typically change, but update if provided
-            if (parts.length >= 3) {
-              updatedPropertySet['Language'] = parts[2];
-            }
-          }
-        } else {
-          // No registry mapping - use original fallback approach
-          Logger.logVerbose(
-            `\n${this.messages.getMessage('componentMappingNotFound', ['OmniScript', fullOmniScriptName])}`
-          );
-          updatedPropertySet['Type'] = this.cleanName(osType);
-          updatedPropertySet['Sub Type'] = this.cleanName(osSubType);
-        }
-        break;
-      case 'Integration Procedure Action':
-        const remoteOptions = updatedPropertySet['remoteOptions'] || {};
-        // Use registry for DataMapper references with explicit fallback
-        const preTransformBundle = propertySet['remoteOptions']?.['preTransformBundle'];
-        if (preTransformBundle) {
-          if (this.nameRegistry.hasDataMapperMapping(preTransformBundle)) {
-            remoteOptions['preTransformBundle'] = this.nameRegistry.getDataMapperCleanedName(preTransformBundle);
-          } else {
-            Logger.logVerbose(
-              `\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', preTransformBundle])}`
-            );
-            remoteOptions['preTransformBundle'] = this.cleanName(preTransformBundle);
-          }
-        }
-
-        const postTransformBundle = propertySet['remoteOptions']?.['postTransformBundle'];
-        if (postTransformBundle) {
-          if (this.nameRegistry.hasDataMapperMapping(postTransformBundle)) {
-            remoteOptions['postTransformBundle'] = this.nameRegistry.getDataMapperCleanedName(postTransformBundle);
-          } else {
-            Logger.logVerbose(
-              `\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', postTransformBundle])}`
-            );
-            remoteOptions['postTransformBundle'] = this.cleanName(postTransformBundle);
-          }
-        }
-        updatedPropertySet['remoteOptions'] = remoteOptions;
-
-        const preBundle = propertySet['preTransformBundle'];
-        if (preBundle) {
-          if (this.nameRegistry.hasDataMapperMapping(preBundle)) {
-            updatedPropertySet['preTransformBundle'] = this.nameRegistry.getDataMapperCleanedName(preBundle);
-          } else {
-            Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', preBundle])}`);
-            updatedPropertySet['preTransformBundle'] = this.cleanName(preBundle);
-          }
-        }
-
-        const postBundle = propertySet['postTransformBundle'];
-        if (postBundle) {
-          if (this.nameRegistry.hasDataMapperMapping(postBundle)) {
-            updatedPropertySet['postTransformBundle'] = this.nameRegistry.getDataMapperCleanedName(postBundle);
-          } else {
-            Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', postBundle])}`);
-            updatedPropertySet['postTransformBundle'] = this.cleanName(postBundle);
-          }
-        }
-
-        // Use registry for Integration Procedure references
-        const key: String = propertySet['integrationProcedureKey'] || '';
-        if (key) {
-          const hasRegistryMapping = this.nameRegistry.hasIntegrationProcedureMapping(key as string);
-          if (hasRegistryMapping) {
-            const cleanedIpName = this.nameRegistry.getIntegrationProcedureCleanedName(key as string);
-            updatedPropertySet['integrationProcedureKey'] = cleanedIpName;
-          } else {
-            Logger.logVerbose(
-              `\n${this.messages.getMessage('componentMappingNotFound', ['IntegrationProcedure', key as string])}`
-            );
-            const parts = key.split('_');
-            const newKey = parts.map((p) => this.cleanName(p, true)).join('_');
-            if (parts.length > 2) {
-              invalidIpReferences.set(mappedObject[ElementMappings.Name], key);
-            }
-            updatedPropertySet['integrationProcedureKey'] = newKey;
-          }
-        }
-        break;
-      case 'DataRaptor Turbo Action':
-      case 'DataRaptor Transform Action':
-      case 'DataRaptor Post Action':
-      case 'DataRaptor Extract Action':
-        // Use registry for DataMapper references with explicit fallback
-        const bundleName = propertySet['bundle'];
-        if (bundleName) {
-          if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
-            updatedPropertySet['bundle'] = this.nameRegistry.getDataMapperCleanedName(bundleName);
-          } else {
-            Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
-            updatedPropertySet['bundle'] = this.cleanName(bundleName);
-          }
-        }
-        break;
-    }
-
-    mappedObject[ElementMappings.PropertySet__c] = JSON.stringify(updatedPropertySet);
+    mappedObject[ElementMappings.PropertySet__c] = JSON.stringify(propertySet);
 
     // BATCH framework requires that each record has an "attributes" property
     mappedObject['attributes'] = {
@@ -1986,6 +1943,11 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
           this.processContentChildren(content['children']);
         }
 
+        // Process persistentComponent array in OmniProcessCompilation Content (inside propSetMap)
+        if (content && content['propSetMap']) {
+          this.processPersistentComponents(content['propSetMap']);
+        }
+
         mappedObject[OmniScriptDefinitionMappings.Content__c] = JSON.stringify(content);
       } catch (ex) {
         // Log
@@ -1999,6 +1961,66 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     };
 
     return mappedObject;
+  }
+
+  /**
+   * Shared helper method to process element types and update references
+   * Handles the switch statement logic for different element types
+   * @param elementType Type of the element
+   * @param propSet Property set map from the element
+   * @param invalidIpReferences Optional map to track invalid IP references
+   * @param elementName Optional element name for logging
+   */
+  private processElementByType(
+    elementType: string,
+    propSet: any,
+    invalidIpReferences?: Map<String, String>,
+    elementName?: string
+  ): void {
+    switch (elementType) {
+      case Constants.OmniScriptComponentName:
+        this.processOmniScriptAction(propSet);
+        break;
+      case Constants.IntegrationProcedureAction:
+        this.processIntegrationProcedureAction(propSet, invalidIpReferences, elementName);
+        break;
+      case Constants.DataRaptorTurboAction:
+      case Constants.DataRaptorTransformAction:
+      case Constants.DataRaptorPostAction:
+      case Constants.DataRaptorExtractAction:
+        this.processDataRaptorAction(propSet);
+        break;
+      case Constants.StepElement:
+        this.processStepAction(propSet);
+        break;
+      case Constants.DocuSignEnvelopeAction:
+        this.processDocuSignEnvelopeAction(propSet);
+        break;
+      case Constants.DocuSignSignatureAction:
+        this.processDocuSignSignatureAction(propSet);
+        break;
+      case Constants.DecisionMatrixAction:
+        this.processDecisionMatrixAction(propSet);
+        break;
+      case Constants.ExpressionSetAction:
+        this.processExpressionSetAction(propSet);
+        break;
+      case Constants.HTTPAction:
+        this.processHttpAction(propSet);
+        break;
+      case Constants.PDFAction:
+        this.processPdfAction(propSet);
+        break;
+      case Constants.RemoteAction:
+        this.processRemoteAction(propSet);
+        break;
+      default:
+        // Handle other element types if needed
+        break;
+    }
+
+    // Process lwcComponentOverride for all element types (FlexCard reference)
+    this.processLwcComponentOverride(propSet);
   }
 
   /**
@@ -2042,33 +2064,63 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       return;
     }
 
-    switch (elementType) {
-      case 'Integration Procedure Action':
-        this.processIntegrationProcedureAction(propSetMap);
-        break;
-      case 'DataRaptor Turbo Action':
-      case 'DataRaptor Transform Action':
-      case 'DataRaptor Post Action':
-      case 'DataRaptor Extract Action':
-        this.processDataRaptorAction(propSetMap);
-        break;
-      case 'OmniScript':
-        this.processOmniScriptAction(propSetMap);
-        break;
-      case 'Step':
-        this.processStepAction(propSetMap);
-        break;
-      default:
-        // Handle other element types if needed
-        break;
+    // Use shared method to process element types
+    this.processElementByType(elementType, propSetMap);
+  }
+
+  /**
+   * Processes DocuSign Envelope Action elements to update transformBundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processDocuSignEnvelopeAction(propSetMap: any): void {
+    // Handle docuSignTemplatesGroup[].transformBundle
+    if (Array.isArray(propSetMap.docuSignTemplatesGroup)) {
+      propSetMap.docuSignTemplatesGroup.forEach((template: any) => {
+        if (template && template.transformBundle) {
+          const bundleName = template.transformBundle;
+          if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
+            template.transformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
+          } else {
+            Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
+            template.transformBundle = this.cleanName(bundleName);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Processes DocuSign Signature Action elements to update transformBundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processDocuSignSignatureAction(propSetMap: any): void {
+    // Handle docuSignTemplatesGroupSig[].transformBundle
+    if (Array.isArray(propSetMap.docuSignTemplatesGroupSig)) {
+      propSetMap.docuSignTemplatesGroupSig.forEach((template: any) => {
+        if (template && template.transformBundle) {
+          const bundleName = template.transformBundle;
+          if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
+            template.transformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
+          } else {
+            Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
+            template.transformBundle = this.cleanName(bundleName);
+          }
+        }
+      });
     }
   }
 
   /**
    * Processes Integration Procedure Action elements to update reference names
    * @param propSetMap Property set map from the element
+   * @param invalidIpReferences Optional map to track invalid IP references for reporting
+   * @param elementName Optional element name for tracking invalid references
    */
-  private processIntegrationProcedureAction(propSetMap: any): void {
+  private processIntegrationProcedureAction(
+    propSetMap: any,
+    invalidIpReferences?: Map<String, String>,
+    elementName?: string
+  ): void {
     // Handle remoteOptions pre/post transform bundles
     if (propSetMap.remoteOptions) {
       if (propSetMap.remoteOptions.preTransformBundle) {
@@ -2076,6 +2128,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
           propSetMap.remoteOptions.preTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
         } else {
+          Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
           propSetMap.remoteOptions.preTransformBundle = this.cleanName(bundleName);
         }
       }
@@ -2085,6 +2138,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
           propSetMap.remoteOptions.postTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
         } else {
+          Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
           propSetMap.remoteOptions.postTransformBundle = this.cleanName(bundleName);
         }
       }
@@ -2096,6 +2150,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
         propSetMap.preTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
       } else {
+        Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
         propSetMap.preTransformBundle = this.cleanName(bundleName);
       }
     }
@@ -2105,6 +2160,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
         propSetMap.postTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
       } else {
+        Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
         propSetMap.postTransformBundle = this.cleanName(bundleName);
       }
     }
@@ -2115,14 +2171,18 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       if (this.nameRegistry.hasIntegrationProcedureMapping(key)) {
         propSetMap.integrationProcedureKey = this.nameRegistry.getIntegrationProcedureCleanedName(key);
       } else {
+        Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['IntegrationProcedure', key])}`);
         const parts = key.split('_');
+        const newKey = parts.map((p) => this.cleanName(p, true)).join('_');
         // Integration Procedures should have Type_SubType format (2 parts)
         if (parts.length > 2) {
-          Logger.logVerbose(this.messages.getMessage('integrationProcedureInvalidUnderscoreFormat', [key]));
-          return;
+          if (invalidIpReferences && elementName) {
+            invalidIpReferences.set(elementName, key);
+          } else {
+            Logger.logVerbose(this.messages.getMessage('integrationProcedureInvalidUnderscoreFormat', [key]));
+          }
         }
-
-        propSetMap.integrationProcedureKey = parts.map((p) => this.cleanName(p, true)).join('_');
+        propSetMap.integrationProcedureKey = newKey;
       }
     }
   }
@@ -2137,9 +2197,12 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
         propSetMap.bundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
       } else {
+        Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
         propSetMap.bundle = this.cleanName(bundleName);
       }
     }
+    // Handle postTransformBundle for DataRaptor Post Action
+    this.processTransformBundles(propSetMap);
   }
 
   /**
@@ -2155,6 +2218,13 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
     const fullOmniScriptName = `${osType}_${osSubType}_${osLanguage}`;
 
     if (this.nameRegistry.isAngularOmniScript(fullOmniScriptName)) {
+      // Referenced OmniScript is Angular - add warning and keep original reference
+      Logger.logVerbose(
+        `\n${this.messages.getMessage('angularOmniScriptDependencyWarning', [
+          'OmniScript element',
+          fullOmniScriptName,
+        ])}`
+      );
       // Keep original reference as-is since Angular OmniScript won't be migrated
       return;
     } else if (this.nameRegistry.hasOmniScriptMapping(fullOmniScriptName)) {
@@ -2172,6 +2242,9 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
       }
     } else {
       // No registry mapping - use original fallback approach
+      Logger.logVerbose(
+        `\n${this.messages.getMessage('componentMappingNotFound', ['OmniScript', fullOmniScriptName])}`
+      );
       propSetMap['Type'] = this.cleanName(osType);
       propSetMap['Sub Type'] = this.cleanName(osSubType);
     }
@@ -2190,6 +2263,7 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
           propSetMap.remoteOptions.preTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
         } else {
+          Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
           propSetMap.remoteOptions.preTransformBundle = this.cleanName(bundleName);
         }
       }
@@ -2199,7 +2273,125 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
           propSetMap.remoteOptions.postTransformBundle = this.nameRegistry.getDataMapperCleanedName(bundleName);
         } else {
+          Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
           propSetMap.remoteOptions.postTransformBundle = this.cleanName(bundleName);
+        }
+      }
+    }
+  }
+
+  /**
+   * Generic helper to process common transform bundle properties
+   * Handles: preTransformBundle, postTransformBundle, remoteOptions.preTransformBundle, remoteOptions.postTransformBundle
+   * @param propSetMap Property set map from the element
+   */
+  private processTransformBundles(propSetMap: any): void {
+    // Handle remoteOptions pre/post transform bundles
+    if (propSetMap.remoteOptions) {
+      if (propSetMap.remoteOptions.preTransformBundle) {
+        propSetMap.remoteOptions.preTransformBundle = this.cleanBundleName(propSetMap.remoteOptions.preTransformBundle);
+      }
+      if (propSetMap.remoteOptions.postTransformBundle) {
+        propSetMap.remoteOptions.postTransformBundle = this.cleanBundleName(
+          propSetMap.remoteOptions.postTransformBundle
+        );
+      }
+    }
+
+    // Handle direct pre/post transform bundles
+    if (propSetMap.preTransformBundle) {
+      propSetMap.preTransformBundle = this.cleanBundleName(propSetMap.preTransformBundle);
+    }
+    if (propSetMap.postTransformBundle) {
+      propSetMap.postTransformBundle = this.cleanBundleName(propSetMap.postTransformBundle);
+    }
+  }
+
+  /**
+   * Helper to clean a single bundle name using registry or fallback
+   * @param bundleName The bundle name to clean
+   * @returns The cleaned bundle name
+   */
+  private cleanBundleName(bundleName: string): string {
+    if (!bundleName) {
+      return bundleName;
+    }
+    if (this.nameRegistry.hasDataMapperMapping(bundleName)) {
+      return this.nameRegistry.getDataMapperCleanedName(bundleName);
+    } else {
+      Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['DataMapper', bundleName])}`);
+      return this.cleanName(bundleName);
+    }
+  }
+
+  /**
+   * Processes Decision Matrix Action elements to update transform bundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processDecisionMatrixAction(propSetMap: any): void {
+    this.processTransformBundles(propSetMap);
+  }
+
+  /**
+   * Processes Expression Set Action elements to update transform bundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processExpressionSetAction(propSetMap: any): void {
+    this.processTransformBundles(propSetMap);
+  }
+
+  /**
+   * Processes HTTP Action elements to update transform bundle references
+   * Handles: preTransformBundle, postTransformBundle, xmlPreTransformBundle, xmlPostTransformBundle
+   * @param propSetMap Property set map from the element
+   */
+  private processHttpAction(propSetMap: any): void {
+    this.processTransformBundles(propSetMap);
+
+    // Handle XML-specific transform bundles
+    if (propSetMap.xmlPreTransformBundle) {
+      propSetMap.xmlPreTransformBundle = this.cleanBundleName(propSetMap.xmlPreTransformBundle);
+    }
+    if (propSetMap.xmlPostTransformBundle) {
+      propSetMap.xmlPostTransformBundle = this.cleanBundleName(propSetMap.xmlPostTransformBundle);
+    }
+  }
+
+  /**
+   * Processes PDF Action elements to update transform bundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processPdfAction(propSetMap: any): void {
+    if (propSetMap.preTransformBundle) {
+      propSetMap.preTransformBundle = this.cleanBundleName(propSetMap.preTransformBundle);
+    }
+  }
+
+  /**
+   * Processes Remote Action elements to update transform bundle references
+   * @param propSetMap Property set map from the element
+   */
+  private processRemoteAction(propSetMap: any): void {
+    this.processTransformBundles(propSetMap);
+  }
+
+  /**
+   * Processes lwcComponentOverride property to update FlexCard reference names
+   * @param propSetMap Property set map from the element
+   */
+  private processLwcComponentOverride(propSetMap: any): void {
+    if (propSetMap.lwcComponentOverride) {
+      const lwcOverride = propSetMap.lwcComponentOverride;
+      // lwcComponentOverride has 'cf' prefix (e.g., 'cfEventManagementBudgetCard')
+      // Registry stores FlexCard names without prefix (e.g., 'EventManagementBudgetCard')
+      if (lwcOverride.startsWith('cf')) {
+        const flexCardName = lwcOverride.substring(2); // Remove 'cf' prefix
+        if (this.nameRegistry.hasFlexCardMapping(flexCardName)) {
+          const cleanedName = this.nameRegistry.getFlexCardCleanedName(flexCardName);
+          propSetMap.lwcComponentOverride = 'cf' + cleanedName;
+        } else {
+          Logger.logVerbose(`\n${this.messages.getMessage('componentMappingNotFound', ['FlexCard', flexCardName])}`);
+          propSetMap.lwcComponentOverride = 'cf' + this.cleanName(flexCardName);
         }
       }
     }
@@ -2265,6 +2457,196 @@ export class OmniScriptMigrationTool extends BaseMigrationTool implements Migrat
         }
       }
     }
+  }
+
+  /**
+   * Collects DataRaptor transform bundle dependencies from PropertySet
+   * Handles: preTransformBundle, postTransformBundle, xmlPreTransformBundle, xmlPostTransformBundle,
+   * and remoteOptions.preTransformBundle, remoteOptions.postTransformBundle
+   * Used by: HTTP Action, Remote Action, Decision Matrix Action, Expression Set Action, PDF Action, Step
+   * @param propertySet - The PropertySet JSON object
+   * @param elemName - Element name for location tracking
+   * @param dependencyDR - Array to collect DataRaptor dependencies
+   * @param existingDataRaptorNames - Set of existing DataRaptor names
+   * @param missingDR - Array to collect missing DataRaptor names
+   */
+  private collectTransformBundleDependencies(
+    propertySet: any,
+    elemName: string,
+    dependencyDR: nameLocation[],
+    existingDataRaptorNames: Set<string>,
+    missingDR: string[]
+  ): void {
+    const bundleFields = [
+      'preTransformBundle',
+      'postTransformBundle',
+      'xmlPreTransformBundle',
+      'xmlPostTransformBundle',
+    ];
+
+    // Check direct transform bundle fields
+    for (const field of bundleFields) {
+      if (propertySet[field]) {
+        const bundleName = propertySet[field];
+        dependencyDR.push({ name: bundleName, location: `${elemName} (${field})` });
+        if (!existingDataRaptorNames.has(bundleName)) {
+          missingDR.push(bundleName);
+        }
+      }
+    }
+
+    // Check remoteOptions transform bundle fields
+    if (propertySet.remoteOptions) {
+      if (propertySet.remoteOptions.preTransformBundle) {
+        const bundleName = propertySet.remoteOptions.preTransformBundle;
+        dependencyDR.push({ name: bundleName, location: `${elemName} (remoteOptions.preTransformBundle)` });
+        if (!existingDataRaptorNames.has(bundleName)) {
+          missingDR.push(bundleName);
+        }
+      }
+      if (propertySet.remoteOptions.postTransformBundle) {
+        const bundleName = propertySet.remoteOptions.postTransformBundle;
+        dependencyDR.push({ name: bundleName, location: `${elemName} (remoteOptions.postTransformBundle)` });
+        if (!existingDataRaptorNames.has(bundleName)) {
+          missingDR.push(bundleName);
+        }
+      }
+    }
+  }
+
+  /**
+   * Collects DataRaptor transform bundle dependencies from DocuSign Envelope Action
+   * Handles: docuSignTemplatesGroup[].transformBundle
+   * @param propertySet - The PropertySet JSON object
+   * @param elemName - Element name for location tracking
+   * @param dependencyDR - Array to collect DataRaptor dependencies
+   * @param existingDataRaptorNames - Set of existing DataRaptor names
+   * @param missingDR - Array to collect missing DataRaptor names
+   */
+  private collectDocuSignBundleDependencies(
+    propertySet: any,
+    elemName: string,
+    dependencyDR: nameLocation[],
+    existingDataRaptorNames: Set<string>,
+    missingDR: string[]
+  ): void {
+    if (Array.isArray(propertySet.docuSignTemplatesGroup)) {
+      propertySet.docuSignTemplatesGroup.forEach((template: any, index: number) => {
+        if (template && template.transformBundle) {
+          const bundleName = template.transformBundle;
+          dependencyDR.push({
+            name: bundleName,
+            location: `${elemName} (docuSignTemplatesGroup[${index}].transformBundle)`,
+          });
+          if (!existingDataRaptorNames.has(bundleName)) {
+            missingDR.push(bundleName);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Collects DataRaptor transform bundle dependencies from DocuSign Signature Action
+   * Handles: docuSignTemplatesGroupSig[].transformBundle
+   * @param propertySet - The PropertySet JSON object
+   * @param elemName - Element name for location tracking
+   * @param dependencyDR - Array to collect DataRaptor dependencies
+   * @param existingDataRaptorNames - Set of existing DataRaptor names
+   * @param missingDR - Array to collect missing DataRaptor names
+   */
+  private collectDocuSignSignatureBundleDependencies(
+    propertySet: any,
+    elemName: string,
+    dependencyDR: nameLocation[],
+    existingDataRaptorNames: Set<string>,
+    missingDR: string[]
+  ): void {
+    if (Array.isArray(propertySet.docuSignTemplatesGroupSig)) {
+      propertySet.docuSignTemplatesGroupSig.forEach((template: any, index: number) => {
+        if (template && template.transformBundle) {
+          const bundleName = template.transformBundle;
+          dependencyDR.push({
+            name: bundleName,
+            location: `${elemName} (docuSignTemplatesGroupSig[${index}].transformBundle)`,
+          });
+          if (!existingDataRaptorNames.has(bundleName)) {
+            missingDR.push(bundleName);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Collects DataRaptor transform bundle dependencies from OmniProcess PropertySetConfig persistentComponent array
+   * Handles: persistentComponent[].remoteOptions.preTransformBundle, persistentComponent[].remoteOptions.postTransformBundle,
+   *          persistentComponent[].preTransformBundle, persistentComponent[].postTransformBundle
+   * @param omniscript - The OmniScript/Integration Procedure record
+   * @param dependencyDR - Array to collect DataRaptor dependencies
+   * @param existingDataRaptorNames - Set of existing DataRaptor names
+   * @param missingDR - Array to collect missing DataRaptor names
+   */
+  private collectPersistentComponentBundleDependencies(
+    omniscript: AnyJson,
+    dependencyDR: nameLocation[],
+    existingDataRaptorNames: Set<string>,
+    missingDR: string[]
+  ): void {
+    const propertySetConfigStr = omniscript[this.getFieldKey('PropertySet__c')];
+    if (!propertySetConfigStr) {
+      return;
+    }
+
+    let propertySetConfig: any;
+    try {
+      propertySetConfig = JSON.parse(propertySetConfigStr);
+    } catch (ex) {
+      Logger.error(`Failed to parse PropertySetConfig for assessment: ${omniscript['Name']}`);
+      return;
+    }
+
+    if (!propertySetConfig || !Array.isArray(propertySetConfig.persistentComponent)) {
+      return;
+    }
+
+    const bundleFields = ['preTransformBundle', 'postTransformBundle'];
+
+    propertySetConfig.persistentComponent.forEach((component: any, index: number) => {
+      if (!component) {
+        return;
+      }
+
+      // Check remoteOptions transform bundle fields
+      if (component.remoteOptions) {
+        bundleFields.forEach((field) => {
+          if (component.remoteOptions[field]) {
+            const bundleName = component.remoteOptions[field];
+            dependencyDR.push({
+              name: bundleName,
+              location: `persistentComponent[${index}].remoteOptions.${field}`,
+            });
+            if (!existingDataRaptorNames.has(bundleName)) {
+              missingDR.push(bundleName);
+            }
+          }
+        });
+      }
+
+      // Check direct transform bundle fields
+      bundleFields.forEach((field) => {
+        if (component[field]) {
+          const bundleName = component[field];
+          dependencyDR.push({
+            name: bundleName,
+            location: `persistentComponent[${index}].${field}`,
+          });
+          if (!existingDataRaptorNames.has(bundleName)) {
+            missingDR.push(bundleName);
+          }
+        }
+      });
+    });
   }
 
   private getElementFieldKey(fieldName: string): string {
