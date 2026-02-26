@@ -219,7 +219,7 @@ export class OrgPreferences {
       // Check if error is INVALID_TYPE for OmniInteractionConfig (indicating no OmniStudio permissions)
       if (this.isOmniInteractionConfigInvalidTypeError(error)) {
         Logger.warn(messages.getMessage('omniStudioPermissionsNotEnabled'));
-        return false;
+        return false; // Fall back to use case 1 since the org doesn't have OmniStudio permissions enabled
       }
 
       // Generic error handling for other errors
@@ -248,7 +248,7 @@ export class OrgPreferences {
       // Check if error is INVALID_TYPE for OmniInteractionConfig (indicating no OmniStudio permissions)
       if (this.isOmniInteractionConfigInvalidTypeError(error)) {
         Logger.warn(messages.getMessage('omniStudioPermissionsNotEnabled'));
-        return false;
+        return false; // Fall back to use case 1 since the org doesn't have OmniStudio permissions enabled
       }
 
       // Generic error handling for other errors
