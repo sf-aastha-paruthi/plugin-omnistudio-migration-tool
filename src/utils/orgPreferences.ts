@@ -96,15 +96,7 @@ export class OrgPreferences {
       return enabledFlags;
     } catch (error: unknown) {
       // Check if error is INVALID_TYPE for OmniInteractionConfig (indicating no OmniStudio permissions)
-      const isInvalidTypeError =
-        error &&
-        typeof error === 'object' &&
-        'errorCode' in error &&
-        (error as { errorCode: unknown }).errorCode === 'INVALID_TYPE' &&
-        'message' in error &&
-        String((error as { message: unknown }).message).includes('OmniInteractionConfig');
-
-      if (isInvalidTypeError) {
+      if (this.isOmniInteractionConfigInvalidTypeError(error)) {
         Logger.warn(messages.getMessage('omniStudioPermissionsNotEnabled'));
         return []; // Return empty array instead of throwing
       }
@@ -225,15 +217,7 @@ export class OrgPreferences {
       }
     } catch (error: unknown) {
       // Check if error is INVALID_TYPE for OmniInteractionConfig (indicating no OmniStudio permissions)
-      const isInvalidTypeError =
-        error &&
-        typeof error === 'object' &&
-        'errorCode' in error &&
-        (error as { errorCode: unknown }).errorCode === 'INVALID_TYPE' &&
-        'message' in error &&
-        String((error as { message: unknown }).message).includes('OmniInteractionConfig');
-
-      if (isInvalidTypeError) {
+      if (this.isOmniInteractionConfigInvalidTypeError(error)) {
         Logger.warn(messages.getMessage('omniStudioPermissionsNotEnabled'));
         return false;
       }
@@ -262,15 +246,7 @@ export class OrgPreferences {
       return false;
     } catch (error: unknown) {
       // Check if error is INVALID_TYPE for OmniInteractionConfig (indicating no OmniStudio permissions)
-      const isInvalidTypeError =
-        error &&
-        typeof error === 'object' &&
-        'errorCode' in error &&
-        (error as { errorCode: unknown }).errorCode === 'INVALID_TYPE' &&
-        'message' in error &&
-        String((error as { message: unknown }).message).includes('OmniInteractionConfig');
-
-      if (isInvalidTypeError) {
+      if (this.isOmniInteractionConfigInvalidTypeError(error)) {
         Logger.warn(messages.getMessage('omniStudioPermissionsNotEnabled'));
         return false;
       }
@@ -280,5 +256,26 @@ export class OrgPreferences {
       Logger.error(`Error checking foundation package : ${errMsg}`);
       return false;
     }
+  }
+
+  /**
+   * Checks if an error is an INVALID_TYPE error for OmniInteractionConfig
+   * This indicates that the org doesn't have OmniStudio permissions enabled
+   *
+   * @private
+   * @static
+   * @param {unknown} error - The error to check
+   * @returns {boolean} True if the error is an INVALID_TYPE error for OmniInteractionConfig
+   */
+  private static isOmniInteractionConfigInvalidTypeError(error: unknown): boolean {
+    return (
+      error !== null &&
+      error !== undefined &&
+      typeof error === 'object' &&
+      'errorCode' in error &&
+      (error as { errorCode: unknown }).errorCode === 'INVALID_TYPE' &&
+      'message' in error &&
+      String((error as { message: unknown }).message).includes('OmniInteractionConfig')
+    );
   }
 }
