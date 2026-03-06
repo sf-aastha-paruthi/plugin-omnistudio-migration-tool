@@ -114,6 +114,95 @@ sf omnistudio:migration:migrate -u YOUR_ORG_USERNAME@DOMAIN.COM --only=autonumbe
 
 5. An HTML page will be open in your default browser with the results of your migration/assessment job.
 
+## Clean Command
+
+Deactivates and deletes Omnistudio records (Omniscripts, Integration Procedures, Flexcards, and Data Mappers) that blocks enabling the Omnistudio Metadata API. Removes records with special characters in unique name fields or missing unique names.
+
+> ⚠️ **Warning:** This action is permanent. Always run in a testing sandbox first and verify results before running in production.
+
+### Prerequisites
+
+- ✅ Org uses **standard data model** (not custom data model)
+- ✅ **Metadata API not enabled** in your org
+- ✅ All Omnistudio components **backed up** or deployed to testing sandbox
+- ✅ Run in **testing sandbox first** to verify results
+
+### Quick Start
+
+```bash
+# Step 1: Preview what would be cleaned (recommended)
+sf omnistudio:migration:clean -u orguser@domain.com --assess
+
+# Step 2: Review assessment reports in clean_assessment/ folder
+
+# Step 3: Run actual cleanup (requires confirmation)
+sf omnistudio:migration:clean -u orguser@domain.com
+```
+
+### Command Options
+
+| Option                        | Description                                             |
+| ----------------------------- | ------------------------------------------------------- |
+| `-u, --target-org=<username>` | (required) Username or alias for target org             |
+| `--assess`                    | Preview records that would be removed (no changes made) |
+
+### Usage Examples
+
+#### Preview Mode (Assessment)
+
+```bash
+# Preview without making changes
+sf omnistudio:migration:clean -u orguser@domain.com --assess
+```
+
+**Assessment Output:**
+
+- Reports saved to `clean_assessment/` folder
+- JSON files for each component type (Omniscripts, Integration Procedures, Flexcards, Data Mappers)
+- Each file contains:
+  - `specialCharacterRecords`: Records with special characters in unique names
+  - `orphanRecords`: Records without deployment references (missing unique names)
+  - `totalToDelete`: Total records that would be removed
+
+#### Cleanup Mode
+
+```bash
+# Run cleanup (requires confirmation)
+sf omnistudio:migration:clean -u orguser@domain.com
+```
+
+**What Happens:**
+
+1. Validates prerequisites (standard data model, Metadata API not enabled)
+2. Shows warning and prompts for confirmation
+3. **Phase 1**: Deactivates and deletes records with special characters
+4. **Phase 2**: Deactivates and deletes records without unique names
+5. Displays completion message
+
+### Cleanup Process
+
+The clean command runs in two phases:
+
+1. **Phase 1: Special Character Cleanup**
+
+   - Removes records with special characters in unique name fields
+   - These records are incompatible with Metadata API
+
+2. **Phase 2: Missing Unique Name Cleanup**
+   - Removes records without deployment references (missing unique names)
+   - These records blocks enabling Metadata API
+
+### Full Command Reference
+
+```
+USAGE
+  $ sf omnistudio:migration:clean -u <username> [--assess]
+
+OPTIONS
+  -u, --target-org=<username>    (required) username or alias for the target org
+  --assess                        preview which records would be removed without making changes
+```
+
 ### Assess Usage & parameters
 
 ```

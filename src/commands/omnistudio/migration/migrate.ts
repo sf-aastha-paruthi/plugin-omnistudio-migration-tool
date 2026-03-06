@@ -119,6 +119,7 @@ export default class Migrate extends SfCommand<MigrateResult> {
     }
   }
 
+  // eslint-disable-next-line complexity
   public async runMigration(parsedFlags: MigrateFlags, ux: Ux, logger: CoreLogger): Promise<MigrateResult> {
     const migrateOnly = parsedFlags.only || '';
     let allVersions = parsedFlags.allversions || false;
@@ -277,6 +278,18 @@ export default class Migrate extends SfCommand<MigrateResult> {
       org.getConnection().version,
       messages
     );
+    try {
+      generatePackageXml.createOmnistudioDeploymentXml(
+        relatedObjectMigrationResult.apexAssessmentInfos,
+        deploymentConfig.autoDeploy && deploymentConfig.authKey ? relatedObjectMigrationResult.lwcAssessmentInfos : [],
+        relatedObjectMigrationResult.experienceSiteAssessmentInfos,
+        relatedObjectMigrationResult.flexipageAssessmentInfos,
+        org.getConnection().version
+      );
+    } catch (error) {
+      Logger.error(messages.getMessage('unexpectedError'), error);
+      Logger.logVerbose(error);
+    }
 
     let deploymentFailed = false;
     try {
