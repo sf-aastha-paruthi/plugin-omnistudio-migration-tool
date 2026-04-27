@@ -700,7 +700,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     return childs;
   }
 
-  private checkComponentForDependencies(component: any, flexCardAssessmentInfo: FlexCardAssessmentInfo): void {
+  private checkComponentForDependencies(
+    component: any,
+    flexCardAssessmentInfo: FlexCardAssessmentInfo,
+    omniScriptNavigateUrlWarningKeys: Set<string> = new Set<string>()
+  ): void {
     // Check if this component is an action element
     if (component.element === 'action' && component.property && component.property.actionList) {
       // Process each action in the actionList
@@ -748,6 +752,12 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           // Case 4: Flyout CustomLwc reference - check for FlexCard reference with "cf" prefix
           else if (this.hasCustomLwcFlyoutDependency(action.stateAction)) {
             this.addCfPrefixedFlexCardDependency(action.stateAction.flyoutLwc, flexCardAssessmentInfo);
+          } else if (this.isCustomWebPageAction(action.stateAction)) {
+            this.addOmniScriptNavigateUrlAssessmentWarning(
+              action.stateAction,
+              flexCardAssessmentInfo,
+              omniScriptNavigateUrlWarningKeys
+            );
           }
         }
       }
@@ -794,6 +804,12 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       // Case 4: Flyout CustomLwc reference on component property - check for FlexCard reference with "cf" prefix
       if (this.hasCustomLwcFlyoutDependency(component.property.stateAction)) {
         this.addCfPrefixedFlexCardDependency(component.property.stateAction.flyoutLwc, flexCardAssessmentInfo);
+      } else if (this.isCustomWebPageAction(component.property.stateAction)) {
+        this.addOmniScriptNavigateUrlAssessmentWarning(
+          component.property.stateAction,
+          flexCardAssessmentInfo,
+          omniScriptNavigateUrlWarningKeys
+        );
       }
     }
 
@@ -814,10 +830,47 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
     // Check child components recursively
     if (component.children && Array.isArray(component.children)) {
-      for (const child of component.children) {
-        this.checkComponentForDependencies(child, flexCardAssessmentInfo);
+      for (let childIndex = 0; childIndex < component.children.length; childIndex++) {
+        const child = component.children[childIndex];
+        this.checkComponentForDependencies(child, flexCardAssessmentInfo, omniScriptNavigateUrlWarningKeys);
       }
     }
+  }
+
+  private addOmniScriptNavigateUrlAssessmentWarning(
+    stateAction: any,
+    flexCardAssessmentInfo: FlexCardAssessmentInfo,
+    warningKeys: Set<string>
+  ): void {
+    if (this.IS_STANDARD_DATA_MODEL) {
+      return;
+    }
+    const rewrite = this.getOmniScriptUrlRewrite(stateAction);
+    if (!rewrite) {
+      return;
+    }
+    const { targetName, updatedUrl } = rewrite;
+
+    const summary = this.formatUrlRewriteSummary(targetName, updatedUrl);
+    if (warningKeys.has(summary)) {
+      return;
+    }
+    warningKeys.add(summary);
+
+    flexCardAssessmentInfo.warnings.push(
+      this.messages.getMessage('webPageOmniScriptNavigationDetected', [
+        this.toReadableUrl(targetName),
+        this.toReadableUrl(updatedUrl),
+      ])
+    );
+    flexCardAssessmentInfo.migrationStatus = getUpdatedAssessmentStatus(
+      flexCardAssessmentInfo.migrationStatus as
+        | 'Warnings'
+        | 'Needs manual intervention'
+        | 'Ready for migration'
+        | 'Failed',
+      'Warnings'
+    );
   }
 
   private async getAllCards(): Promise<AnyJson[]> {
@@ -931,7 +984,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
       // Perform the transformation
       const invalidIpNames = new Map<string, string>();
-      const transformedCard = this.mapVlocityCardRecord(card, cardsUploadInfo, invalidIpNames); // This only has the card structure, card definition is not there
+      const urlUpdateSummaries = new Set<string>();
+      const transformedCard = this.mapVlocityCardRecord(card, cardsUploadInfo, invalidIpNames, urlUpdateSummaries); // This only has the card structure, card definition is not there
 
       // Verify duplicated names
       let transformedCardName: string;
@@ -1030,6 +1084,17 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         uploadResult.actualName = transformedCard['Name']; // This is required as storage needs name without version, for replacement in other references
         if (transformedCard['Name'] !== card['Name']) {
           uploadResult.warnings.unshift(this.messages.getMessage('cardNameChangeMessage', [transformedCardName]));
+        }
+
+        if (urlUpdateSummaries.size > 0) {
+          uploadResult.warnings.unshift(
+            this.messages.getMessage('flexCardOmniScriptNavigateUrlUpdated', [String(urlUpdateSummaries.size)])
+          );
+          uploadResult.warnings.push(
+            this.messages.getMessage('flexCardOmniScriptNavigateUrlUpdateLocations', [
+              Array.from(urlUpdateSummaries).join(', '),
+            ])
+          );
         }
 
         if (uploadResult.id && invalidIpNames.size > 0) {
@@ -1244,7 +1309,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   private mapVlocityCardRecord(
     cardRecord: AnyJson,
     cardsUploadInfo: Map<string, UploadRecordResult>,
-    invalidIpNames: Map<string, string>
+    invalidIpNames: Map<string, string>,
+    urlUpdateSummaries: Set<string>
   ): AnyJson {
     // Transformed object
     let mappedObject = {};
@@ -1333,7 +1399,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     this.ensureCommunityTargets(mappedObject, isCardActive);
 
     // Update all dependencies comprehensively
-    this.updateAllDependenciesWithRegistry(mappedObject, invalidIpNames);
+    this.updateAllDependenciesWithRegistry(mappedObject, invalidIpNames, urlUpdateSummaries);
 
     mappedObject['attributes'] = {
       type: CardMigrationTool.OMNIUICARD_NAME,
@@ -1346,7 +1412,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   /**
    * Comprehensive dependency update using NameMappingRegistry - mirrors assessment logic
    */
-  private updateAllDependenciesWithRegistry(mappedObject: any, invalidIpNames: Map<string, string>): void {
+  private updateAllDependenciesWithRegistry(
+    mappedObject: any,
+    invalidIpNames: Map<string, string>,
+    urlUpdateSummaries: Set<string>
+  ): void {
     // Handle propertySet (Definition) - update all dependency references
     const propertySet = JSON.parse(mappedObject[CardMappings.Definition__c] || '{}');
     if (propertySet) {
@@ -1384,7 +1454,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
             for (const componentKey in state.components) {
               if (state.components.hasOwnProperty(componentKey)) {
                 const component = state.components[componentKey];
-                this.updateComponentDependenciesWithRegistry(component);
+                this.updateComponentDependenciesWithRegistry(component, urlUpdateSummaries);
               }
             }
           }
@@ -1521,7 +1591,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   /**
    * Update component dependencies comprehensively
    */
-  private updateComponentDependenciesWithRegistry(component: any): void {
+  private updateComponentDependenciesWithRegistry(component: any, urlUpdateSummaries: Set<string>): void {
     // Handle action elements with actionList (like assessment)
     if (component.element === 'action' && component.property && component.property.actionList) {
       for (const action of component.property.actionList) {
@@ -1540,6 +1610,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           // Case 3: Flyout with flyoutLwc (ChildCard or CustomLwc)
           else if (this.hasFlyoutLwc(action.stateAction)) {
             this.updateFlyoutLwcValue(action.stateAction);
+          }
+          // Case A: Custom Web Page action referencing OmniScript Universal Page
+          else if (this.isCustomWebPageAction(action.stateAction)) {
+            this.applyOmniScriptUrlRewrite(action.stateAction, urlUpdateSummaries);
           }
         }
       }
@@ -1568,6 +1642,9 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       // Handle Flyout with flyoutLwc (ChildCard or CustomLwc)
       if (this.hasFlyoutLwc(component.property.stateAction)) {
         this.updateFlyoutLwcValue(component.property.stateAction);
+      }
+      if (this.isCustomWebPageAction(component.property.stateAction)) {
+        this.applyOmniScriptUrlRewrite(component.property.stateAction, urlUpdateSummaries);
       }
     }
 
@@ -1623,9 +1700,121 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     // Check child components recursively
     if (component.children && Array.isArray(component.children)) {
       for (const child of component.children) {
-        this.updateComponentDependenciesWithRegistry(child);
+        this.updateComponentDependenciesWithRegistry(child, urlUpdateSummaries);
       }
     }
+  }
+
+  private applyOmniScriptUrlRewrite(stateAction: any, urlUpdateSummaries: Set<string>): void {
+    if (this.IS_STANDARD_DATA_MODEL) {
+      return;
+    }
+    const rewrite = this.getOmniScriptUrlRewrite(stateAction);
+    if (!rewrite) {
+      return;
+    }
+    const { targetName, updatedUrl } = rewrite;
+
+    stateAction[Constants.WebPageTargetType].targetName = updatedUrl;
+    urlUpdateSummaries.add(this.formatUrlRewriteSummary(targetName, updatedUrl));
+  }
+
+  private formatUrlRewriteSummary(originalUrl: string, updatedUrl: string): string {
+    return `${this.toReadableUrl(originalUrl)} -> ${this.toReadableUrl(updatedUrl)}`;
+  }
+
+  private toReadableUrl(url: string): string {
+    try {
+      return decodeURIComponent(url);
+    } catch {
+      return url;
+    }
+  }
+
+  private getOmniScriptUrlRewrite(stateAction: any): { targetName: string; updatedUrl: string } | undefined {
+    const targetName = stateAction[Constants.WebPageTargetType]?.targetName;
+    if (typeof targetName !== 'string' || !this.isOmniScriptNavigationUrl(targetName)) {
+      return undefined;
+    }
+
+    const updatedUrl = this.convertToStandardOmniScriptUrl(targetName);
+    if (updatedUrl === targetName) {
+      return undefined;
+    }
+
+    return { targetName, updatedUrl };
+  }
+
+  private isCustomWebPageAction(stateAction: any): boolean {
+    return stateAction?.type === Constants.CustomActionType && stateAction?.targetType === Constants.WebPageTargetType;
+  }
+
+  private isOmniScriptNavigationUrl(url: string): boolean {
+    return [
+      Constants.OmniScriptUniversalPagePath,
+      Constants.OmniScriptUniversalPageToken,
+      Constants.OmniScriptTypeParam,
+      Constants.OmniScriptSubTypeParam,
+      Constants.OmniScriptLangParam,
+    ].every((token) => url.includes(token));
+  }
+
+  private convertToStandardOmniScriptUrl(inputUrl: string): string {
+    // Placeholder base lets URL parse both absolute and relative input URLs uniformly.
+    const parsedUrl = new URL(inputUrl, 'https://placeholder.local');
+
+    const paramRenames: Record<string, string> = {
+      [Constants.OmniScriptTypeParam]: Constants.OmniScriptStandardTypeParam,
+      [Constants.OmniScriptSubTypeParam]: Constants.OmniScriptStandardSubTypeParam,
+      [Constants.OmniScriptLangParam]: Constants.OmniScriptStandardLanguageParam,
+      [Constants.OmniScriptLayoutParam]: Constants.OmniScriptStandardThemeParam,
+    };
+    const paramsToClean = new Set<string>([Constants.OmniScriptTypeParam, Constants.OmniScriptSubTypeParam]);
+
+    // Merge query-string params with fragment params. Query-string entries win on conflict.
+    const mergedEntries: Array<[string, string]> = [];
+    const seenKeys = new Set<string>();
+    parsedUrl.searchParams.forEach((value, key) => {
+      mergedEntries.push([key, value]);
+      seenKeys.add(key);
+    });
+    for (const [key, value] of this.parseSlashFragmentParams(parsedUrl.hash)) {
+      if (!seenKeys.has(key)) {
+        mergedEntries.push([key, value]);
+        seenKeys.add(key);
+      }
+    }
+
+    const newSearchParams = new URLSearchParams();
+    for (const [key, value] of mergedEntries) {
+      const newKey = paramRenames[key] ?? key;
+      const newValue = paramsToClean.has(key) ? this.cleanName(value) : value;
+      newSearchParams.append(newKey, newValue);
+    }
+
+    return `${Constants.OmniScriptStandardPagePath}?${newSearchParams.toString()}`;
+  }
+
+  /**
+   * Parse a slash-separated OmniScript fragment of the form
+   *   #/Key1/Value1/Key2/Value2/...
+   * into [key, value] pairs. Tolerates leading `#`, leading `/`, empty values
+   * (consecutive slashes), and a trailing orphan token (which is dropped).
+   */
+  private parseSlashFragmentParams(hash: string): Array<[string, string]> {
+    if (!hash) {
+      return [];
+    }
+    const trimmed = hash.replace(/^#\/?/, '');
+    if (!trimmed) {
+      return [];
+    }
+    const tokens = trimmed.split('/').map((t) => decodeURIComponent(t));
+    const pairs: Array<[string, string]> = [];
+    for (let i = 0; i + 1 < tokens.length; i += 2) {
+      pairs.push([tokens[i], tokens[i + 1]]);
+    }
+    return pairs;
   }
 
   /**
