@@ -28,6 +28,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   static readonly VLOCITYCARD_NAME = 'VlocityCard__c';
   static readonly OMNIUICARD_NAME = 'OmniUiCard';
   static readonly VERSION_PROP = 'Version__c';
+  private static readonly URL_PARSE_BASE = 'https://placeholder.local';
   private IS_STANDARD_DATA_MODEL: boolean = isStandardDataModel();
 
   private readonly allVersions: boolean;
@@ -703,7 +704,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   private checkComponentForDependencies(
     component: any,
     flexCardAssessmentInfo: FlexCardAssessmentInfo,
-    omniScriptNavigateUrlWarningKeys: Set<string> = new Set<string>()
+    omniScriptNavigateURLWarningKeys: Set<string> = new Set<string>()
   ): void {
     // Check if this component is an action element
     if (component.element === 'action' && component.property && component.property.actionList) {
@@ -753,10 +754,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           else if (this.hasCustomLwcFlyoutDependency(action.stateAction)) {
             this.addCfPrefixedFlexCardDependency(action.stateAction.flyoutLwc, flexCardAssessmentInfo);
           } else if (this.isCustomWebPageAction(action.stateAction)) {
-            this.addOmniScriptNavigateUrlAssessmentWarning(
+            this.addOmniScriptNavigateURLAssessmentWarning(
               action.stateAction,
               flexCardAssessmentInfo,
-              omniScriptNavigateUrlWarningKeys
+              omniScriptNavigateURLWarningKeys
             );
           }
         }
@@ -805,10 +806,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       if (this.hasCustomLwcFlyoutDependency(component.property.stateAction)) {
         this.addCfPrefixedFlexCardDependency(component.property.stateAction.flyoutLwc, flexCardAssessmentInfo);
       } else if (this.isCustomWebPageAction(component.property.stateAction)) {
-        this.addOmniScriptNavigateUrlAssessmentWarning(
+        this.addOmniScriptNavigateURLAssessmentWarning(
           component.property.stateAction,
           flexCardAssessmentInfo,
-          omniScriptNavigateUrlWarningKeys
+          omniScriptNavigateURLWarningKeys
         );
       }
     }
@@ -832,12 +833,12 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (component.children && Array.isArray(component.children)) {
       for (let childIndex = 0; childIndex < component.children.length; childIndex++) {
         const child = component.children[childIndex];
-        this.checkComponentForDependencies(child, flexCardAssessmentInfo, omniScriptNavigateUrlWarningKeys);
+        this.checkComponentForDependencies(child, flexCardAssessmentInfo, omniScriptNavigateURLWarningKeys);
       }
     }
   }
 
-  private addOmniScriptNavigateUrlAssessmentWarning(
+  private addOmniScriptNavigateURLAssessmentWarning(
     stateAction: any,
     flexCardAssessmentInfo: FlexCardAssessmentInfo,
     warningKeys: Set<string>
@@ -845,13 +846,13 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (this.IS_STANDARD_DATA_MODEL) {
       return;
     }
-    const rewrite = this.getOmniScriptUrlRewrite(stateAction);
+    const rewrite = this.getOmniScriptURLRewrite(stateAction);
     if (!rewrite) {
       return;
     }
-    const { targetName, updatedUrl } = rewrite;
+    const { targetName, updatedURL } = rewrite;
 
-    const summary = this.formatUrlRewriteSummary(targetName, updatedUrl);
+    const summary = this.formatURLRewriteSummary(targetName, updatedURL);
     if (warningKeys.has(summary)) {
       return;
     }
@@ -859,8 +860,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
     flexCardAssessmentInfo.warnings.push(
       this.messages.getMessage('webPageOmniScriptNavigationDetected', [
-        this.toReadableUrl(targetName),
-        this.toReadableUrl(updatedUrl),
+        this.toReadableURL(targetName),
+        this.toReadableURL(updatedURL),
       ])
     );
     flexCardAssessmentInfo.migrationStatus = getUpdatedAssessmentStatus(
@@ -1088,10 +1089,10 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
 
         if (urlUpdateSummaries.size > 0) {
           uploadResult.warnings.unshift(
-            this.messages.getMessage('flexCardOmniScriptNavigateUrlUpdated', [String(urlUpdateSummaries.size)])
+            this.messages.getMessage('flexCardOmniScriptNavigateURLUpdated', [String(urlUpdateSummaries.size)])
           );
           uploadResult.warnings.push(
-            this.messages.getMessage('flexCardOmniScriptNavigateUrlUpdateLocations', [
+            this.messages.getMessage('flexCardOmniScriptNavigateURLUpdateLocations', [
               Array.from(urlUpdateSummaries).join(', '),
             ])
           );
@@ -1613,7 +1614,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           }
           // Case A: Custom Web Page action referencing OmniScript Universal Page
           else if (this.isCustomWebPageAction(action.stateAction)) {
-            this.applyOmniScriptUrlRewrite(action.stateAction, urlUpdateSummaries);
+            this.applyOmniScriptURLRewrite(action.stateAction, urlUpdateSummaries);
           }
         }
       }
@@ -1644,7 +1645,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         this.updateFlyoutLwcValue(component.property.stateAction);
       }
       if (this.isCustomWebPageAction(component.property.stateAction)) {
-        this.applyOmniScriptUrlRewrite(component.property.stateAction, urlUpdateSummaries);
+        this.applyOmniScriptURLRewrite(component.property.stateAction, urlUpdateSummaries);
       }
     }
 
@@ -1705,25 +1706,32 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     }
   }
 
-  private applyOmniScriptUrlRewrite(stateAction: any, urlUpdateSummaries: Set<string>): void {
+  private applyOmniScriptURLRewrite(stateAction: any, urlUpdateSummaries: Set<string>): void {
     if (this.IS_STANDARD_DATA_MODEL) {
       return;
     }
-    const rewrite = this.getOmniScriptUrlRewrite(stateAction);
+    const rewrite = this.getOmniScriptURLRewrite(stateAction);
     if (!rewrite) {
       return;
     }
-    const { targetName, updatedUrl } = rewrite;
+    const { targetName, updatedURL } = rewrite;
 
-    stateAction[Constants.WebPageTargetType].targetName = updatedUrl;
-    urlUpdateSummaries.add(this.formatUrlRewriteSummary(targetName, updatedUrl));
+    stateAction[Constants.WebPageTargetType].targetName = updatedURL;
+    urlUpdateSummaries.add(this.formatURLRewriteSummary(targetName, updatedURL));
   }
 
-  private formatUrlRewriteSummary(originalUrl: string, updatedUrl: string): string {
-    return `${this.toReadableUrl(originalUrl)} -> ${this.toReadableUrl(updatedUrl)}`;
+  /** Build a human-readable "before -> after" string for warning messages only. */
+  private formatURLRewriteSummary(originalURL: string, updatedURL: string): string {
+    return `${this.toReadableURL(originalURL)} -> ${this.toReadableURL(updatedURL)}`;
   }
 
-  private toReadableUrl(url: string): string {
+  /**
+   * Decode a URL for DISPLAY purposes only (warning/log messages). The output
+   * is lossy with respect to URL parsing semantics (e.g. an encoded `%26`
+   * becomes a literal `&`) and must NOT be re-fed into a URL parser. Falls
+   * back to the raw input on malformed percent sequences.
+   */
+  private toReadableURL(url: string): string {
     try {
       return decodeURIComponent(url);
     } catch {
@@ -1731,38 +1739,93 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     }
   }
 
-  private getOmniScriptUrlRewrite(stateAction: any): { targetName: string; updatedUrl: string } | undefined {
+  private getOmniScriptURLRewrite(stateAction: any): { targetName: string; updatedURL: string } | undefined {
     const targetName = stateAction[Constants.WebPageTargetType]?.targetName;
-    if (typeof targetName !== 'string' || !this.isOmniScriptNavigationUrl(targetName)) {
+    if (typeof targetName !== 'string') {
       return undefined;
     }
 
-    const updatedUrl = this.convertToStandardOmniScriptUrl(targetName);
-    if (updatedUrl === targetName) {
+    // Fast reject: if the raw text doesn't even mention the universal-page
+    // path or token, skip URL parsing entirely. This is a substring screen,
+    // not a security check; the strict structural validation happens after
+    // parsing in isValidOmniScriptNavigationURL.
+    if (
+      !targetName.includes(Constants.OmniScriptUniversalPagePath) ||
+      !targetName.includes(Constants.OmniScriptUniversalPageToken)
+    ) {
       return undefined;
     }
 
-    return { targetName, updatedUrl };
+    const parsedURL = this.tryParseURL(targetName);
+    if (!parsedURL || !this.isValidOmniScriptNavigationURL(parsedURL)) {
+      return undefined;
+    }
+
+    const updatedURL = this.convertToStandardOmniScriptURL(parsedURL);
+    return { targetName, updatedURL };
   }
 
   private isCustomWebPageAction(stateAction: any): boolean {
     return stateAction?.type === Constants.CustomActionType && stateAction?.targetType === Constants.WebPageTargetType;
   }
 
-  private isOmniScriptNavigationUrl(url: string): boolean {
-    return [
-      Constants.OmniScriptUniversalPagePath,
-      Constants.OmniScriptUniversalPageToken,
-      Constants.OmniScriptTypeParam,
-      Constants.OmniScriptSubTypeParam,
-      Constants.OmniScriptLangParam,
-    ].every((token) => url.includes(token));
+  /**
+   * Parse a URL string without throwing. Returns the parsed URL on success or
+   * undefined for:
+   *   - syntactically invalid input (e.g. `https://[bad`, raw spaces in host,
+   *     `http:///` with no host), or
+   *   - URLs whose scheme is not `http:` or `https:` (e.g. `javascript:`,
+   *     `data:`, `file:`, `mailto:`).
+   *
+   * See URL_PARSE_BASE for why a synthetic base is supplied.
+   */
+  private tryParseURL(input: string): URL | undefined {
+    let parsed: URL;
+    try {
+      parsed = new URL(input, CardMigrationTool.URL_PARSE_BASE);
+    } catch {
+      return undefined;
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return undefined;
+    }
+    return parsed;
   }
 
-  private convertToStandardOmniScriptUrl(inputUrl: string): string {
-    // Placeholder base lets URL parse both absolute and relative input URLs uniformly.
-    const parsedUrl = new URL(inputUrl, 'https://placeholder.local');
+  /**
+   * Verify a parsed URL has the OmniScript Navigate shape. We validate against
+   * the parsed components (pathname / searchParams / hash) rather than doing
+   * substring matches on the raw input so callers cannot smuggle the required
+   * tokens in unrelated positions (e.g. inside another query value).
+   *
+   * The pathname must START WITH `/apex/` and contain the universal-page
+   * token. Anchoring to the prefix rejects non-http(s) schemes such as
+   * `javascript:alert(1)//apex/...` whose parsed pathname does not begin
+   * with `/` (it begins with the opaque body of the scheme).
+   *
+   * Two legitimate shapes are accepted:
+   *   1. Path + query:    /apex/<ns>__OmniScriptUniversalPage?OmniScriptType=...&OmniScriptSubType=...&OmniScriptLang=...
+   *   2. Path + fragment: /apex/<ns>__OmniScriptUniversalPage?...#/OmniScriptType/.../OmniScriptSubType/.../OmniScriptLang/...
+   */
+  private isValidOmniScriptNavigationURL(parsedURL: URL): boolean {
+    if (!parsedURL.pathname.startsWith(`${Constants.OmniScriptUniversalPagePath}/`)) {
+      return false;
+    }
+    if (!parsedURL.pathname.includes(Constants.OmniScriptUniversalPageToken)) {
+      return false;
+    }
 
+    const fragmentKeys = new Set<string>(this.parseSlashFragmentParams(parsedURL.hash).map(([key]) => key));
+    const hasParam = (key: string): boolean => parsedURL.searchParams.has(key) || fragmentKeys.has(key);
+
+    return (
+      hasParam(Constants.OmniScriptTypeParam) &&
+      hasParam(Constants.OmniScriptSubTypeParam) &&
+      hasParam(Constants.OmniScriptLangParam)
+    );
+  }
+
+  private convertToStandardOmniScriptURL(parsedURL: URL): string {
     const paramRenames: Record<string, string> = {
       [Constants.OmniScriptTypeParam]: Constants.OmniScriptStandardTypeParam,
       [Constants.OmniScriptSubTypeParam]: Constants.OmniScriptStandardSubTypeParam,
@@ -1774,11 +1837,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     // Merge query-string params with fragment params. Query-string entries win on conflict.
     const mergedEntries: Array<[string, string]> = [];
     const seenKeys = new Set<string>();
-    parsedUrl.searchParams.forEach((value, key) => {
+    parsedURL.searchParams.forEach((value, key) => {
       mergedEntries.push([key, value]);
       seenKeys.add(key);
     });
-    for (const [key, value] of this.parseSlashFragmentParams(parsedUrl.hash)) {
+    for (const [key, value] of this.parseSlashFragmentParams(parsedURL.hash)) {
       if (!seenKeys.has(key)) {
         mergedEntries.push([key, value]);
         seenKeys.add(key);
@@ -1800,6 +1863,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
    *   #/Key1/Value1/Key2/Value2/...
    * into [key, value] pairs. Tolerates leading `#`, leading `/`, empty values
    * (consecutive slashes), and a trailing orphan token (which is dropped).
+   *
+   * Tokens with malformed percent sequences (e.g. `Foo%`, `Bar%E2`) are kept
+   * as-is rather than throwing; decodeURIComponent raises URIError on invalid
+   * escape sequences and we don't want one bad token to crash the whole
+   * FlexCard's URL rewrite.
    */
   private parseSlashFragmentParams(hash: string): Array<[string, string]> {
     if (!hash) {
@@ -1809,7 +1877,13 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (!trimmed) {
       return [];
     }
-    const tokens = trimmed.split('/').map((t) => decodeURIComponent(t));
+    const tokens = trimmed.split('/').map((t) => {
+      try {
+        return decodeURIComponent(t);
+      } catch {
+        return t;
+      }
+    });
     const pairs: Array<[string, string]> = [];
     for (let i = 0; i + 1 < tokens.length; i += 2) {
       pairs.push([tokens[i], tokens[i + 1]]);
