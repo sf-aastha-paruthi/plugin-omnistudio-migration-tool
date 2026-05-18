@@ -850,7 +850,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (!rewrite) {
       return;
     }
-    const { targetName, updatedURL } = rewrite;
+    const { targetName, updatedURL, malformedTokens } = rewrite;
 
     const summary = this.formatURLRewriteSummary(targetName, updatedURL);
     if (warningKeys.has(summary)) {
@@ -858,12 +858,26 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     }
     warningKeys.add(summary);
 
-    flexCardAssessmentInfo.warnings.push(
-      this.messages.getMessage('webPageOmniScriptNavigationDetected', [
+    // Emit a single warning per URL: when fragment tokens are malformed, the
+    // dedicated malformed-token warning is the authoritative one (it already
+    // contains both the original URL and the "will get replaced with" line,
+    // PLUS the malformed-token list and the verify instruction). For clean
+    // URLs we fall back to the plain rewrite warning. Defense-in-depth: if
+    // the malformed formatter unexpectedly returns empty, fall back to the
+    // plain rewrite warning so the customer still sees something.
+    const hasMalformedTokens = Array.isArray(malformedTokens) && malformedTokens.length > 0;
+    let warningText = '';
+    if (hasMalformedTokens) {
+      warningText = this.formatMalformedFragmentTokenWarning(targetName, updatedURL, malformedTokens);
+    }
+    if (!warningText) {
+      warningText = this.messages.getMessage('webPageOmniScriptNavigationDetected', [
         this.toReadableURL(targetName),
         this.toReadableURL(updatedURL),
-      ])
-    );
+      ]);
+    }
+    flexCardAssessmentInfo.warnings.push(warningText);
+
     flexCardAssessmentInfo.migrationStatus = getUpdatedAssessmentStatus(
       flexCardAssessmentInfo.migrationStatus as
         | 'Warnings'
@@ -872,6 +886,44 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         | 'Failed',
       'Warnings'
     );
+  }
+
+  /**
+   * Build the customer-facing warning shown when a Web Page action URL contains
+   * fragment tokens that decodeURIComponent couldn't parse. Centralised here so
+   * the assessment and migration paths emit byte-identical text.
+   *
+   * Returns an empty string when the helper is called with no malformed tokens
+   * (defense in depth: callers already guard, but a future caller that forgets
+   * shouldn't be able to produce a degenerate warning with an empty bracket).
+   * Non-string entries are coerced via String() so a misbehaving caller can't
+   * surface "undefined" / "[object Object]" to customers; duplicates are
+   * suppressed so a fragment like `#/Foo%/Bar/Foo%/Baz` doesn't render as
+   * `["Foo%", "Foo%"]`.
+   */
+  private formatMalformedFragmentTokenWarning(
+    targetName: string,
+    updatedURL: string,
+    malformedTokens: string[]
+  ): string {
+    if (!Array.isArray(malformedTokens) || malformedTokens.length === 0) {
+      return '';
+    }
+    const seen = new Set<string>();
+    const uniqueTokens: string[] = [];
+    for (const raw of malformedTokens) {
+      const t = typeof raw === 'string' ? raw : String(raw);
+      if (!seen.has(t)) {
+        seen.add(t);
+        uniqueTokens.push(t);
+      }
+    }
+    const tokenList = uniqueTokens.map((t) => `"${t}"`).join(', ');
+    return this.messages.getMessage('webPageOmniScriptUrlMalformedToken', [
+      tokenList,
+      this.toReadableURL(targetName),
+      this.toReadableURL(updatedURL),
+    ]);
   }
 
   private async getAllCards(): Promise<AnyJson[]> {
@@ -986,7 +1038,17 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       // Perform the transformation
       const invalidIpNames = new Map<string, string>();
       const urlUpdateSummaries = new Set<string>();
-      const transformedCard = this.mapVlocityCardRecord(card, cardsUploadInfo, invalidIpNames, urlUpdateSummaries); // This only has the card structure, card definition is not there
+      // Map keyed by rewrite summary so the emission step below can subtract
+      // malformed URLs from the aggregate "Updated URLs:" locations message.
+      // Same key for two actions on the same card => one entry (deduped).
+      const malformedFragmentWarnings = new Map<string, string>();
+      const transformedCard = this.mapVlocityCardRecord(
+        card,
+        cardsUploadInfo,
+        invalidIpNames,
+        urlUpdateSummaries,
+        malformedFragmentWarnings
+      ); // This only has the card structure, card definition is not there
 
       // Verify duplicated names
       let transformedCardName: string;
@@ -1087,15 +1149,29 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           uploadResult.warnings.unshift(this.messages.getMessage('cardNameChangeMessage', [transformedCardName]));
         }
 
-        if (urlUpdateSummaries.size > 0) {
+        // The count summary describes ONLY URLs that were converted cleanly
+        // to the standard URL format. Malformed URLs were rewritten with
+        // their bad tokens kept as-is -- claiming they were "updated to
+        // standard URL format" alongside their own malformed warning would
+        // contradict that warning and confuse the customer. Each malformed
+        // URL is surfaced via its own dedicated bullet below which already
+        // names the original URL, the rewritten URL, and the verify
+        // instruction.
+        const cleanRewriteSummaries = Array.from(urlUpdateSummaries).filter(
+          (summary) => !malformedFragmentWarnings.has(summary)
+        );
+        if (cleanRewriteSummaries.length > 0) {
           uploadResult.warnings.unshift(
-            this.messages.getMessage('flexCardOmniScriptNavigateURLUpdated', [String(urlUpdateSummaries.size)])
+            this.messages.getMessage('flexCardOmniScriptNavigateURLUpdated', [String(cleanRewriteSummaries.length)])
           );
-          uploadResult.warnings.push(
-            this.messages.getMessage('flexCardOmniScriptNavigateURLUpdateLocations', [
-              Array.from(urlUpdateSummaries).join(', '),
-            ])
-          );
+        }
+
+        // Surface malformed-fragment-token warnings (one per affected URL).
+        // These are intentionally emitted *instead of* the count bullet
+        // above so the customer sees a single, actionable bullet per
+        // malformed URL: original URL, rewrite, verify instruction.
+        for (const malformedWarning of malformedFragmentWarnings.values()) {
+          uploadResult.warnings.push(malformedWarning);
         }
 
         if (uploadResult.id && invalidIpNames.size > 0) {
@@ -1311,7 +1387,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     cardRecord: AnyJson,
     cardsUploadInfo: Map<string, UploadRecordResult>,
     invalidIpNames: Map<string, string>,
-    urlUpdateSummaries: Set<string>
+    urlUpdateSummaries: Set<string>,
+    malformedFragmentWarnings?: Map<string, string>
   ): AnyJson {
     // Transformed object
     let mappedObject = {};
@@ -1400,7 +1477,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     this.ensureCommunityTargets(mappedObject, isCardActive);
 
     // Update all dependencies comprehensively
-    this.updateAllDependenciesWithRegistry(mappedObject, invalidIpNames, urlUpdateSummaries);
+    this.updateAllDependenciesWithRegistry(mappedObject, invalidIpNames, urlUpdateSummaries, malformedFragmentWarnings);
 
     mappedObject['attributes'] = {
       type: CardMigrationTool.OMNIUICARD_NAME,
@@ -1416,7 +1493,8 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   private updateAllDependenciesWithRegistry(
     mappedObject: any,
     invalidIpNames: Map<string, string>,
-    urlUpdateSummaries: Set<string>
+    urlUpdateSummaries: Set<string>,
+    malformedFragmentWarnings?: Map<string, string>
   ): void {
     // Handle propertySet (Definition) - update all dependency references
     const propertySet = JSON.parse(mappedObject[CardMappings.Definition__c] || '{}');
@@ -1455,7 +1533,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
             for (const componentKey in state.components) {
               if (state.components.hasOwnProperty(componentKey)) {
                 const component = state.components[componentKey];
-                this.updateComponentDependenciesWithRegistry(component, urlUpdateSummaries);
+                this.updateComponentDependenciesWithRegistry(component, urlUpdateSummaries, malformedFragmentWarnings);
               }
             }
           }
@@ -1592,7 +1670,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
   /**
    * Update component dependencies comprehensively
    */
-  private updateComponentDependenciesWithRegistry(component: any, urlUpdateSummaries: Set<string>): void {
+  private updateComponentDependenciesWithRegistry(
+    component: any,
+    urlUpdateSummaries: Set<string>,
+    malformedFragmentWarnings?: Map<string, string>
+  ): void {
     // Handle action elements with actionList (like assessment)
     if (component.element === 'action' && component.property && component.property.actionList) {
       for (const action of component.property.actionList) {
@@ -1614,7 +1696,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
           }
           // Case A: Custom Web Page action referencing OmniScript Universal Page
           else if (this.isCustomWebPageAction(action.stateAction)) {
-            this.applyOmniScriptURLRewrite(action.stateAction, urlUpdateSummaries);
+            this.applyOmniScriptURLRewrite(action.stateAction, urlUpdateSummaries, malformedFragmentWarnings);
           }
         }
       }
@@ -1645,7 +1727,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
         this.updateFlyoutLwcValue(component.property.stateAction);
       }
       if (this.isCustomWebPageAction(component.property.stateAction)) {
-        this.applyOmniScriptURLRewrite(component.property.stateAction, urlUpdateSummaries);
+        this.applyOmniScriptURLRewrite(component.property.stateAction, urlUpdateSummaries, malformedFragmentWarnings);
       }
     }
 
@@ -1701,12 +1783,16 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     // Check child components recursively
     if (component.children && Array.isArray(component.children)) {
       for (const child of component.children) {
-        this.updateComponentDependenciesWithRegistry(child, urlUpdateSummaries);
+        this.updateComponentDependenciesWithRegistry(child, urlUpdateSummaries, malformedFragmentWarnings);
       }
     }
   }
 
-  private applyOmniScriptURLRewrite(stateAction: any, urlUpdateSummaries: Set<string>): void {
+  private applyOmniScriptURLRewrite(
+    stateAction: any,
+    urlUpdateSummaries: Set<string>,
+    malformedFragmentWarnings?: Map<string, string>
+  ): void {
     if (this.IS_STANDARD_DATA_MODEL) {
       return;
     }
@@ -1714,10 +1800,27 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     if (!rewrite) {
       return;
     }
-    const { targetName, updatedURL } = rewrite;
+    const { targetName, updatedURL, malformedTokens } = rewrite;
 
     stateAction[Constants.WebPageTargetType].targetName = updatedURL;
-    urlUpdateSummaries.add(this.formatURLRewriteSummary(targetName, updatedURL));
+    const summary = this.formatURLRewriteSummary(targetName, updatedURL);
+    urlUpdateSummaries.add(summary);
+
+    // Per-card collector is optional so internal/test callers can omit it
+    // without forcing a signature update. The Map is keyed by the rewrite
+    // summary so the emission step can later subtract malformed URLs from
+    // the aggregate "Updated URLs: ..." locations message -- each malformed
+    // entry already carries the original URL, the rewritten URL, and the
+    // verify instruction inside its own warning, so listing it twice would
+    // be redundant. Same key for two actions on the same card => one entry.
+    // Defense-in-depth: skip if the formatter returns an empty string so we
+    // never store a blank warning under a real summary key.
+    if (malformedFragmentWarnings && Array.isArray(malformedTokens) && malformedTokens.length > 0) {
+      const malformedWarning = this.formatMalformedFragmentTokenWarning(targetName, updatedURL, malformedTokens);
+      if (malformedWarning) {
+        malformedFragmentWarnings.set(summary, malformedWarning);
+      }
+    }
   }
 
   /** Build a human-readable "before -> after" string for warning messages only. */
@@ -1739,7 +1842,9 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     }
   }
 
-  private getOmniScriptURLRewrite(stateAction: any): { targetName: string; updatedURL: string } | undefined {
+  private getOmniScriptURLRewrite(
+    stateAction: any
+  ): { targetName: string; updatedURL: string; malformedTokens: string[] } | undefined {
     const targetName = stateAction[Constants.WebPageTargetType]?.targetName;
     if (typeof targetName !== 'string') {
       return undefined;
@@ -1762,7 +1867,11 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     }
 
     const updatedURL = this.convertToStandardOmniScriptURL(parsedURL);
-    return { targetName, updatedURL };
+    // Re-parse the fragment once more here purely to capture malformed-token
+    // diagnostics for the caller. Cheap (single split + map over a short
+    // string) and keeps `convertToStandardOmniScriptURL` focused on rewriting.
+    const { malformedTokens } = this.parseSlashFragmentParams(parsedURL.hash);
+    return { targetName, updatedURL, malformedTokens };
   }
 
   private isCustomWebPageAction(stateAction: any): boolean {
@@ -1815,7 +1924,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       return false;
     }
 
-    const fragmentKeys = new Set<string>(this.parseSlashFragmentParams(parsedURL.hash).map(([key]) => key));
+    const fragmentKeys = new Set<string>(this.parseSlashFragmentParams(parsedURL.hash).pairs.map(([key]) => key));
     const hasParam = (key: string): boolean => parsedURL.searchParams.has(key) || fragmentKeys.has(key);
 
     return (
@@ -1841,7 +1950,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
       mergedEntries.push([key, value]);
       seenKeys.add(key);
     });
-    for (const [key, value] of this.parseSlashFragmentParams(parsedURL.hash)) {
+    for (const [key, value] of this.parseSlashFragmentParams(parsedURL.hash).pairs) {
       if (!seenKeys.has(key)) {
         mergedEntries.push([key, value]);
         seenKeys.add(key);
@@ -1867,20 +1976,24 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
    * Tokens with malformed percent sequences (e.g. `Foo%`, `Bar%E2`) are kept
    * as-is rather than throwing; decodeURIComponent raises URIError on invalid
    * escape sequences and we don't want one bad token to crash the whole
-   * FlexCard's URL rewrite.
+   * FlexCard's URL rewrite. The raw (still-encoded) tokens are also returned
+   * via `malformedTokens` so callers can surface them to customers as a
+   * "please verify" warning rather than silently shipping a best-effort guess.
    */
-  private parseSlashFragmentParams(hash: string): Array<[string, string]> {
+  private parseSlashFragmentParams(hash: string): { pairs: Array<[string, string]>; malformedTokens: string[] } {
     if (!hash) {
-      return [];
+      return { pairs: [], malformedTokens: [] };
     }
     const trimmed = hash.replace(/^#\/?/, '');
     if (!trimmed) {
-      return [];
+      return { pairs: [], malformedTokens: [] };
     }
+    const malformedTokens: string[] = [];
     const tokens = trimmed.split('/').map((t) => {
       try {
         return decodeURIComponent(t);
       } catch {
+        malformedTokens.push(t);
         return t;
       }
     });
@@ -1888,7 +2001,7 @@ export class CardMigrationTool extends BaseMigrationTool implements MigrationToo
     for (let i = 0; i + 1 < tokens.length; i += 2) {
       pairs.push([tokens[i], tokens[i + 1]]);
     }
-    return pairs;
+    return { pairs, malformedTokens };
   }
 
   /**
